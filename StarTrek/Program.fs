@@ -25,8 +25,6 @@
 
 open System
 
-type Command = NAV | SRS | LRS | PHA | TOR | SHE | DAM | COM | XXX | INV
-
 type SectorId = int * int
 type QuadrantId = int * int
 
@@ -70,9 +68,6 @@ type State = {
     DirectionArray : int array2d
     StartAgain : bool
     }
-
-
-  
 
 let quadrantCreate x y =
     let klingonCount() =
@@ -280,42 +275,6 @@ let shortRangeScan state =
     printfn "   "
     state
 
-let command() =
-    let getCommand() =
-        printfn "   "
-        printfn "ENTER ONE OF THE FOLLOWING COMMANDS:"
-        printfn "NAV - TO SET COURSE"
-        printfn "SRS - FOR SHORT RANGE SENSOR SCAN"
-        printfn "LRS - FOR LONG RANGE SENSOR SCAN"
-        printfn "PHA - TO FIRE PHASERS"
-        printfn "TOR - TO FIRE PHOTON TORPEDOES"
-        printfn "SHE - FOR SHIELD CONTROL"
-        printfn "DAM - TO GET DAMAGE REPORTS"
-        printfn "COM - TO CALL ON LIBRARY-COMPUTER"
-        printfn "XXX - TO RESIGN YOUR COMMAND"
-        printfn "   "
-        printf "COMMAND ? "
-        Console.ReadLine()
-
-    let mutable validCommand = false;
-    let mutable command = Command.INV;
-
-    while not validCommand do
-        let cmd = getCommand()
-        match cmd.ToUpper() with
-        | "NAV" -> validCommand <- true; command <- Command.NAV;
-        | "SRS" -> validCommand <- true; command <- Command.SRS;
-        | "LRS" -> validCommand <- true; command <- Command.LRS;
-        | "PHA" -> validCommand <- true; command <- Command.PHA;
-        | "TOR" -> validCommand <- true; command <- Command.TOR;
-        | "SHE" -> validCommand <- true; command <- Command.SHE;
-        | "DAM" -> validCommand <- true; command <- Command.DAM;
-        | "COM" -> validCommand <- true; command <- Command.COM;
-        | "XXX" -> validCommand <- true; command <- Command.XXX;
-        | _ -> printfn "Invalid command"; 
-        
-    printfn ""
-    command
 
 let changeQuadrant state newQuadrant =
     let rnd = Random();
@@ -412,7 +371,7 @@ let getCoordinates(state : State) =
     W1 -> fst finalCoordinate
     X -> snd finalCoordinate
 *)
-let distanceCalculator initialCoordinate finalCoordinate = 
+let distanceCalculator (initialCoordinate : (int * int)) (finalCoordinate : (int * int)) = 
     let x = snd finalCoordinate - snd initialCoordinate
     let a = fst initialCoordinate - fst finalCoordinate
     if x >= 0 then
@@ -440,8 +399,9 @@ let computerPhotonTorpedoData(state : State) =
         printfn "FROM ENTERPRISE TO KLINGON BATTLE CRUISER"
         let initialCoordinate = state.CurrentSector
         let finalCoordinate = findKlingon quadrant.Sectors
-        let distance = distanceCalculator initialCoordinate finalCoordinate 
-        printfn "Distance %d" distance
+        match finalCoordinate with
+        | None -> printfn "NO KLINGON IN THIS QUADRANT"; 
+        | Some finalCoordinate -> printfn $"Distance {distanceCalculator initialCoordinate finalCoordinate}";
 
     ()
 
@@ -506,13 +466,29 @@ let navigate state =
         let newQuadrant = (fst state.CurrentQuadrant + x1, snd state.CurrentQuadrant + x2)
         changeQuadrant state newQuadrant
 
+
 let longRangeScan state =
+    let getQuadrant (state : State) (qadrantId : (int * int)) : Quadrant option =
+        if (fst qadrantId) < 0 || (fst qadrantId) > 7 || (snd qadrantId) < 0 || (snd qadrantId) > 7 then
+            None
+        else
+            Some state.Galaxy.Value.Quadrants.[fst qadrantId, snd qadrantId]
+
     if not state.LongRangerScanners then
         printfn "LONG RANGE SENSORS ARE INOPERABLE."
     else
         printfn $"LONG RANGE SCAN FOR QUADRANT {quadrantName state.CurrentQuadrant}"
         printfn "   "
-        printfn "-------------------------------"
+        printfn "+-----+-----+-----+"
+
+        for i = fst state.CurrentQuadrant - 1 to fst state.CurrentQuadrant + 1 do
+            for j = snd state.CurrentQuadrant - 1  to snd state.CurrentQuadrant + 1 do
+                match getQuadrant state (i, j) with
+                | None -> printf "| *** "
+                | Some q -> printf $"| {q.Klingons:D1}{q.Starbases:D1}{q.Stars:D1} "
+            printfn "|"
+            printfn "+-----+-----+-----+"
+
     state
 
 let pha state =
@@ -588,20 +564,50 @@ let endOfMission(state) =
 
 let mainLoop() =
     start() |> ignore
+
+    let commandMenu() =
+        printfn "   "
+        printfn "ENTER ONE OF THE FOLLOWING COMMANDS:"
+        printfn "NAV - TO SET COURSE"
+        printfn "SRS - FOR SHORT RANGE SENSOR SCAN"
+        printfn "LRS - FOR LONG RANGE SENSOR SCAN"
+        printfn "PHA - TO FIRE PHASERS"
+        printfn "TOR - TO FIRE PHOTON TORPEDOES"
+        printfn "SHE - FOR SHIELD CONTROL"
+        printfn "DAM - TO GET DAMAGE REPORTS"
+        printfn "COM - TO CALL ON LIBRARY-COMPUTER"
+        printfn "XXX - TO RESIGN YOUR COMMAND"
+        printfn "   "
+        printf "COMMAND ? "
+        Console.ReadLine().Trim().ToUpper();
+
+    let getCommand() =
+        let mutable validCommand = false;
+        let mutable command = "";
+
+        while not validCommand do
+            let cmd = commandMenu()
+            command <- match cmd with
+                        | "NAV" | "SRS" | "LRS" | "PHA" | "TOR" | "SHE" | "DAM" | "COM" | "XXX" -> validCommand <- true; cmd;
+                        | _ -> printfn "Invalid command"; "";
+        
+        printfn ""
+        command
+
     let mutable state = startGame createState
     let mutable isOk = true
     
     while isOk do
-        state <- match command() with
-                 | Command.NAV -> navigate state
-                 | Command.SRS -> shortRangeScan state
-                 | Command.LRS -> longRangeScan state
-                 | Command.PHA -> pha state
-                 | Command.TOR -> tor state
-                 | Command.SHE -> she state
-                 | Command.DAM -> dam state
-                 | Command.COM -> computer state
-                 | Command.XXX -> isOk <- false; endOfMission(state)
+        state <- match getCommand() with
+                 | "NAV" -> navigate state
+                 | "SRS" -> shortRangeScan state
+                 | "LRS" -> longRangeScan state
+                 | "PHA" -> pha state
+                 | "TOR" -> tor state
+                 | "SHE" -> she state
+                 | "DAM" -> dam state
+                 | "COM" -> computer state
+                 | "XXX" -> isOk <- false; endOfMission(state)
                  | _ -> printfn "Invalid command"; state
 
     state.StartAgain
