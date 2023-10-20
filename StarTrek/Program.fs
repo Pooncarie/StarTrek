@@ -54,6 +54,7 @@ type State = {
     Galaxy : Galaxy option
     StarDate : int
     CurrentStarDate : int
+    TotalStardate : int
     Condition : string
     CurrentQuadrant : QuadrantId
     CurrentSector : SectorId
@@ -67,12 +68,11 @@ type State = {
     Energy : int
     Shields : int
     DirectionArray : int array2d
+    StartAgain : bool
     }
 
 
-let sectorCreate x y = 
-    { Starbase = false; Star = false; Klingon = false; Enterprise = false; SectorId = (x, y) }
-    
+  
 
 let quadrantCreate x y =
     let klingonCount() =
@@ -93,6 +93,9 @@ let quadrantCreate x y =
         let rnd = Random();
         int  (rnd.NextDouble() * 7.98 + 1.01)
 
+    let sectorCreate x y = 
+        { Starbase = false; Star = false; Klingon = false; Enterprise = false; SectorId = (x, y) }
+
     let quadrant = { 
         Starbases = starBaseCount()
         Stars = starCount()
@@ -103,25 +106,26 @@ let quadrantCreate x y =
 
     quadrant
 
-let createGalaxy = { Quadrants = Array2D.init 8 8 (fun i j -> quadrantCreate i j) }
 
 let createState = 
+    let createGalaxy = { Quadrants = Array2D.init 8 8 (fun i j -> quadrantCreate i j) }
+
     let arrayOfMove = [|
-            [| 1; 0 |]
-            [| 1; -1 |]
-            [| 0; -1 |]
-            [| -1; 1 |]
-            [| -1; -0 |]
-            [| -1; 1 |]
-            [| 0; 1 |]
-            [| 1; 1 |]
-            [| 1; 0|]
+            [| -1; 0 |]    
+            [| -1; -1 |]   
+            [| 0; -1 |]    
+            [| 1; -1 |]    
+            [| 1; 0 |]     
+            [| 1; 1 |]     
+            [| 0; 1|]      
+            [| -1; 1 |]    
         |]
 
     let s = {
         Galaxy = Some createGalaxy
         StarDate = 0
         CurrentStarDate = 0
+        TotalStardate = 0
         Condition = "GREEN"
         CurrentQuadrant = QuadrantId(0, 0)
         CurrentSector = SectorId(0,0)
@@ -134,7 +138,8 @@ let createState =
         LongRangerScanners = true
         Energy = 1000
         Shields = 100
-        DirectionArray = Array2D.init 9 2 (fun i j -> arrayOfMove[i][j])
+        DirectionArray = Array2D.init 8 2 (fun i j -> arrayOfMove[i][j])
+        StartAgain = false;
         }
 
     let mutable totalStarbases = 0
@@ -149,34 +154,61 @@ let createState =
             totalStars <- totalStars + quadrant.Stars
 
     let rnd = Random();
-    let starDate = 25 + (int) (rnd.NextDouble() * 10.0)
+    let totalStarDate = 25 + (int) (rnd.NextDouble() * 10.0)
+    (* T  & T0 *)
+    let starDate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
 
-    { s with TotalKlingons = totalKlingons; TotalStarbases = totalStarbases; TotalStars = totalStars; StarDate = starDate}
+    { s with TotalKlingons = totalKlingons; TotalStarbases = totalStarbases; TotalStars = totalStars; StarDate = starDate; TotalStardate = totalStarDate; CurrentStarDate = starDate; }
 
 
-let quadrantName state =
+let quadrantName quadrant =
         let partNames = [" I"; " II"; " III"; " IV";]
-        if (snd state.CurrentQuadrant) < 4 then
-            match fst state.CurrentQuadrant with
-            | 0 -> "ANTARES" + partNames.[snd state.CurrentQuadrant % 4]
-            | 1 -> "RIGEL" + partNames.[snd state.CurrentQuadrant % 4]
-            | 2 -> "PROCYON" + partNames.[snd state.CurrentQuadrant % 4]
-            | 3 -> "VEGA" + partNames.[snd state.CurrentQuadrant % 4]
-            | 4 -> "CANOPUS" + partNames.[snd state.CurrentQuadrant % 4]
-            | 5 -> "ALTAIR" + partNames.[snd state.CurrentQuadrant % 4]
-            | 6 -> "SAGITTARIUS" + partNames.[snd state.CurrentQuadrant % 4]
-            | 7 -> "POLLUX" + partNames.[snd state.CurrentQuadrant % 4]
+
+        if (snd quadrant) < 4 then
+            match fst quadrant with
+            | 0 -> "ANTARES" + partNames.[snd quadrant % 4]
+            | 1 -> "RIGEL" + partNames.[snd quadrant % 4]
+            | 2 -> "PROCYON" + partNames.[snd quadrant % 4]
+            | 3 -> "VEGA" + partNames.[snd quadrant % 4]
+            | 4 -> "CANOPUS" + partNames.[snd quadrant % 4]
+            | 5 -> "ALTAIR" + partNames.[snd quadrant % 4]
+            | 6 -> "SAGITTARIUS" + partNames.[snd quadrant % 4]
+            | 7 -> "POLLUX" + partNames.[snd quadrant % 4]
             | _ -> ""
         else
-            match fst state.CurrentQuadrant with
-            | 0 -> "SIRIUS" + partNames.[snd state.CurrentQuadrant % 4]
-            | 1 -> "DENEB" + partNames.[snd state.CurrentQuadrant % 4]
-            | 2 -> "CAPELLA" + partNames.[snd state.CurrentQuadrant % 4]
-            | 3 -> "BETELGEUSE" + partNames.[snd state.CurrentQuadrant % 4]
-            | 4 -> "ALDEBARAN" + partNames.[snd state.CurrentQuadrant % 4]
-            | 5 -> "REGULUS" + partNames.[snd state.CurrentQuadrant % 4]
-            | 6 -> "ARCTURUS" + partNames.[snd state.CurrentQuadrant % 4]
-            | 7 -> "SPICA" + partNames.[snd state.CurrentQuadrant % 4]
+            match fst quadrant with
+            | 0 -> "SIRIUS" + partNames.[snd quadrant % 4]
+            | 1 -> "DENEB" + partNames.[snd quadrant % 4]
+            | 2 -> "CAPELLA" + partNames.[snd quadrant % 4]
+            | 3 -> "BETELGEUSE" + partNames.[snd quadrant % 4]
+            | 4 -> "ALDEBARAN" + partNames.[snd quadrant % 4]
+            | 5 -> "REGULUS" + partNames.[snd quadrant % 4]
+            | 6 -> "ARCTURUS" + partNames.[snd quadrant % 4]
+            | 7 -> "SPICA" + partNames.[snd quadrant % 4]
+            | _ -> ""
+
+let quadrantNameAlt quadrant =
+        if (snd quadrant) < 4 then
+            match fst quadrant with
+            | 0 -> "ANTARES    "
+            | 1 -> "RIGEL      "
+            | 2 -> "PROCYON    "
+            | 3 -> "VEGA       "
+            | 4 -> "CANOPUS    "
+            | 5 -> "ALTAIR     "
+            | 6 -> "SAGITTARIUS"
+            | 7 -> "POLLUX     "
+            | _ -> ""
+        else
+            match fst quadrant with
+            | 0 -> "SIRIUS     "
+            | 1 -> "DENEB      "
+            | 2 -> "CAPELLA    "
+            | 3 -> "BETELGEUSE "
+            | 4 -> "ALDEBARAN  "
+            | 5 -> "REGULUS    "
+            | 6 -> "ARCTURUS   "
+            | 7 -> "SPICA      "
             | _ -> ""
 
 let start() =
@@ -189,7 +221,7 @@ let start() =
     printfn "                    THE USS ENTERPRISE --- NCC-1701"
     printfn ""
     printfn ""
-    ()
+    
 
 let printSector state line =
     let sector = state.Galaxy.Value.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant].Sectors;
@@ -217,7 +249,7 @@ let printSector state line =
 
 
 let shortRangeScan state = 
-    printfn "SHORT RANGE SCAN FOR QUADRANT %s" (quadrantName state)
+    printfn "SHORT RANGE SCAN FOR QUADRANT %s" (quadrantName state.CurrentQuadrant)
     printfn "   "
     printfn " +--1---2---3---4---5---6---7---8-+"
     printf "1|"
@@ -246,11 +278,12 @@ let shortRangeScan state =
     printfn $"        KLINGONS REMAINING  {state.TotalKlingons}"
     printf " +--------------------------------+"
     printfn "   "
+    state
 
 let command() =
     let getCommand() =
         printfn "   "
-        printfn "Enter one of the following commands:"
+        printfn "ENTER ONE OF THE FOLLOWING COMMANDS:"
         printfn "NAV - TO SET COURSE"
         printfn "SRS - FOR SHORT RANGE SENSOR SCAN"
         printfn "LRS - FOR LONG RANGE SENSOR SCAN"
@@ -281,11 +314,12 @@ let command() =
         | "XXX" -> validCommand <- true; command <- Command.XXX;
         | _ -> printfn "Invalid command"; 
         
+    printfn ""
     command
 
 let changeQuadrant state newQuadrant =
     let rnd = Random();
-    let sectorIndexs = Seq.initInfinite (fun _ -> (rnd.Next(0, 8), rnd.Next(0, 8))) |> Seq.distinct |> Seq.take(30) |> Seq.toArray
+    let sectorIndexs = Seq.initInfinite (fun _ -> (rnd.Next(0, 7), rnd.Next(0, 7))) |> Seq.distinct |> Seq.take(40) |> Seq.toArray
 
     let s1 = { state with CurrentQuadrant = newQuadrant }
     let quadrant = s1.Galaxy.Value.Quadrants.[fst newQuadrant, snd newQuadrant]
@@ -319,7 +353,7 @@ let changeQuadrant state newQuadrant =
     )
 
     printfn ""
-    printfn $"NOW ENTERING {quadrantName state} QUADRANT . . ."
+    printfn $"NOW ENTERING {quadrantName s1.CurrentQuadrant} QUADRANT . . ."
     printfn ""
     { s1 with CurrentSector = sectorIndexs[0]}
 
@@ -328,23 +362,92 @@ let startGame (state : State) =
     (* Start in a random quadrant *)
     let rnd = Random();
     let newQuadrant = (rnd.Next(0, 8), rnd.Next(0, 8))
-    let s1 = changeQuadrant state newQuadrant
+    let newState = changeQuadrant state newQuadrant
 
     printfn "YOUR ORDERS ARE AS FOLLOWS:"
-    printfn "   DESTROY THE %d KLINGON WARSHIPS WHICH HAVE INVADED" state.TotalKlingons
+    printfn $"   DESTROY THE {state.TotalKlingons} KLINGON WARSHIPS WHICH HAVE INVADED" 
     printfn "   THE GALAXY BEFORE THEY CAN ATTACK FEDERATION HEADQUARTERS"
-    printfn "   ON STARDATE %d. THIS GIVES YOU %d DAYS. THERE ARE %d" state.StarDate (state.StarDate - state.CurrentStarDate) state.TotalStarbases
+    printfn $"   ON STARDATE {state.StarDate}. THIS GIVES YOU {(state.StarDate - state.CurrentStarDate)} DAYS. THERE ARE {state.TotalStarbases}"   
     printfn "   STARBASES IN THE GALAXY FOR RESUPPLYING YOUR SHIP."
     printfn ""
     printfn ""
     printfn "YOUR MISSION BEGINS WITH YOUR STARSHIP LOCATED"
-    printfn "IN THE GALACTIC QUADRANT %s" (quadrantName state)
-    s1
+    printfn $"IN THE GALACTIC QUADRANT {(quadrantName newState.CurrentQuadrant)}"
+    newState
 
 
-let nav state =
+(* Show all the quadrant names, mostly for debugging purposes. *)
+let galaxyMap(quadrant) = 
+    printfn $"CURRENT QUADRANT {(quadrantName quadrant)}"
+    printfn "+-I-----------+-II----------+-III---------+-IV----------+-I-----------+-II----------+-III---------+-IV----------+"
+    for i in [0..7] do
+        printf "| "
+        for j in [0..7] do
+            let name = quadrantNameAlt (i, j)
+            printf $"{name} | "
+        printfn ""
+        printfn "+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+"
+
+let computerStatusReport state =
+    printfn "STATUS REPORT:"
+    printfn $"    KLINGONS LEFT: {state.TotalKlingons}"
+    printfn $"    MISSION MUST BE COMPLETED IN {int (0.1 * double((state.CurrentStarDate + state.TotalStardate - state.StarDate) * 10)) } STARDATES"
+    if state.TotalStarbases > 0 then
+        printfn $"    THE FEDERATION IS MAINTAINING {state.TotalStarbases} STARBASES IN THE GALAXY"
+    else
+        printfn "    YOUR STUPIDITY HAS LEFT YOU ON YOUR ON IN THE GALAXY -- YOU HAVE NO STARBASES LEFT!"
+
+let getCoordinates(state : State) =
+    printfn "DIRECTION/DISTANCE CALCULATOR:"
+    printfn $"YOU ARE AT QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1} SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
+    printf "PLEASE ENTER INITIAL COORDINATES (X,Y)"
+    let initialCoordinate = Console.ReadLine().Trim()
+    printf "FINAL COORDINATES (X,Y)"
+    let finalCoordinate = Console.ReadLine().Trim()
+    ()
+    
+(* 
+    C1 -> fst initialCoordinate 
+    A -> snd initialCoordinate
+    W1 -> fst finalCoordinate
+    X -> snd finalCoordinate
+*)
+let distanceCalculator initialCoordinate finalCoordinate = 
+    let x = snd finalCoordinate - snd initialCoordinate
+    let a = fst initialCoordinate - fst finalCoordinate
+    if x >= 0 then
+        if a < 0 then
+            let c1 = 7
+            if abs a < abs x then
+                printfn $"DIRECTION = {c1 + (( ((abs x) - (abs a)) + (abs x)) / (abs x))} "
+            else
+                printfn $"DIRECTION = {c1 + ((abs x) / (abs a))}"
+            printfn $"DISTANCE = {sqrt (double x * double x + double a * double a)}"
+    0
+
+let computerPhotonTorpedoData(state : State) =
+    let findKlingon (arr: Sector [,]) = 
+        let rec go x y =
+          if y >= arr.GetLength 1 then None
+          elif x >= arr.GetLength 0 then go 0 (y+1)
+          elif arr.[x,y].Klingon = true then Some (x,y)
+          else go (x+1) y
+        
+        go 0 0
+
+    let quadrant = state.Galaxy.Value.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant];
+    if quadrant.Klingons > 0 then
+        printfn "FROM ENTERPRISE TO KLINGON BATTLE CRUISER"
+        let initialCoordinate = state.CurrentSector
+        let finalCoordinate = findKlingon quadrant.Sectors
+        let distance = distanceCalculator initialCoordinate finalCoordinate 
+        printfn "Distance %d" distance
+
+    ()
+
+let navigate state =
     let getCourse() =
-        printfn "COURSE (0-9) "
+        printfn "COURSE (0-8) "
         let mutable str = Console.ReadLine().Trim()
         let mutable num = 0
         let mutable ok = false
@@ -355,17 +458,14 @@ let nav state =
                 printfn "COURSE (0-9) "
                 str <- Console.ReadLine().Trim()
            
-            if (num < 1 || num > 9) then
+            if (num < 1 || num > 8) then
                 printfn "   LT. SULU REPORTS, 'INCORRECT COURSE DATA, SIR!'"; printfn "";
                 printfn "COURSE (0-9) "
                 str <- Console.ReadLine().Trim()
             else
                 ok <- true
 
-        if num = 9 then
-            num <- 0
-        else
-            num <- num - 1
+        num - 1
 
     // TODO: warp factor is dependant on energy ????
     let getWarpFactor() =
@@ -390,31 +490,29 @@ let nav state =
                 ok <- true
         num
 
+
     let course = getCourse()
     let warpFactor = getWarpFactor()
 
-    let rnd = Random();
-    let newQuadrant = (rnd.Next(0, 8), rnd.Next(0, 8))
+    let x1 = state.DirectionArray[course,0]
+    let x2 = state.DirectionArray[course,1]
 
-    let s1 = changeQuadrant state newQuadrant
+    printf $"NEW QUADRANT {fst state.CurrentQuadrant + x1 + 1}, {snd state.CurrentQuadrant + x2 + 1} "
 
-    s1
+    if fst state.CurrentQuadrant + x1 < 0 || fst state.CurrentQuadrant + x1 > 7 || snd state.CurrentQuadrant + x2 < 0 || snd state.CurrentQuadrant + x2 > 7 then
+        printfn $"WARP ENGINES SHUT DOWN AT SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1} DUE TO BAD NAVIGATION"
+        state
+    else
+        let newQuadrant = (fst state.CurrentQuadrant + x1, snd state.CurrentQuadrant + x2)
+        changeQuadrant state newQuadrant
 
 let longRangeScan state =
-    printfn "LONG RANGE SCAN FOR QUADRANT %s" (quadrantName state)
-    printfn "   "
-    printfn "-------------------------------"
-
-
-let srs state =
-    shortRangeScan state
-    state
-
-let lrs state =
     if not state.LongRangerScanners then
         printfn "LONG RANGE SENSORS ARE INOPERABLE."
     else
-        printfn $"LONG RANGE SCAN FOR QUADRANT {quadrantName state}"
+        printfn $"LONG RANGE SCAN FOR QUADRANT {quadrantName state.CurrentQuadrant}"
+        printfn "   "
+        printfn "-------------------------------"
     state
 
 let pha state =
@@ -433,36 +531,86 @@ let dam state =
     printfn "DAM"
     state
 
-let com state =
-    printfn "COM"
+let computer(state : State) =
+    let commandMenu() =
+        printfn "   "
+        printfn "FUNCTIONS AVAILABLE FROM LIBRARY-COMPUTER::"
+        printfn "0 = CUMULATIVE GALACTIC RECORD"
+        printfn "1 = STATUS REPORT"
+        printfn "2 = PHOTON TORPEDO DATA"
+        printfn "3 = STARBASE NAV DATA"
+        printfn "4 = DIRECTION/DISTANCE CALCULATOR"
+        printfn "5 = GALAXY 'REGION NAME' MAP"
+        printfn "6 = GALAXY MAP"
+        printfn "7 = EXIT LIBRARY-COMPUTER"
+        printfn "   "
+        printf "COMMAND ? "
+        Console.ReadLine().Trim().ToUpper();
+
+    let getCommand() =
+        let mutable validCommand = false;
+        let mutable cmdOption = ""
+
+        while not validCommand do
+            let mutable cmd = commandMenu()
+            cmdOption <- match cmd with
+                            | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" -> validCommand <- true; cmd;
+                            | _ -> printfn "Invalid command"; "";
+            printfn ""
+
+        cmdOption
+
+    let mutable isOk = true
+    while isOk do
+        match getCommand() with
+                | "1" -> computerStatusReport state
+                | "2" -> computerPhotonTorpedoData state
+                | "6" -> galaxyMap(state.CurrentQuadrant)
+                | "7" -> isOk <- false
+                | _ -> ();
     state
 
-let xxx state =
-    printfn "XXX"
-    state
+let endOfMission(state) =
+    printfn $"THERE WERE {state.TotalKlingons} KLINGON BATTLE CRUISERS LEFT AT"
+    printfn "THE END OF YOUR MISSION."
+    printfn ""
+    printfn ""
+    if state.TotalStarbases <> 0 then
+        printfn "THE FEDERATION IS IN NEED OF A NEW STARSHIP COMMANDER"
+        printfn "FOR A SIMILAR MISSION -- IF THERE IS A VOLUNTEER,"
+        printf "LET HIM STEP FORWARD AND ENTER 'AYE' : "
+        if Console.ReadLine().Trim().ToUpper() = "AYE" then
+            { state with StartAgain = true }            
+        else
+            state
+    else
+        state
 
-let rec mainLoop st =
-    let command = command()
-    let mutable state = st
-    state <- match command with
-             | Command.NAV -> nav state
-             | Command.SRS -> srs state
-             | Command.LRS -> lrs state
-             | Command.PHA -> pha state
-             | Command.TOR -> tor state
-             | Command.SHE -> she state
-             | Command.DAM -> dam state
-             | Command.COM -> com state
-             | Command.XXX -> xxx state
-             | _ -> printfn "Invalid command"; state
+let mainLoop() =
+    start() |> ignore
+    let mutable state = startGame createState
+    let mutable isOk = true
+    
+    while isOk do
+        state <- match command() with
+                 | Command.NAV -> navigate state
+                 | Command.SRS -> shortRangeScan state
+                 | Command.LRS -> longRangeScan state
+                 | Command.PHA -> pha state
+                 | Command.TOR -> tor state
+                 | Command.SHE -> she state
+                 | Command.DAM -> dam state
+                 | Command.COM -> computer state
+                 | Command.XXX -> isOk <- false; endOfMission(state)
+                 | _ -> printfn "Invalid command"; state
 
-    mainLoop state
+    state.StartAgain
 
-start()
+[<EntryPoint>]
+let main argv =
+    let mutable isOk = true
 
+    while isOk do
+        isOk <- mainLoop()
 
-let mutable state = createState
-
-state <- startGame state
-
-mainLoop state
+    0

@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Include="QuadrantMap.txt" />
     <None Include="st.bas" />
     <Compile Include="Program.fs" />
   </ItemGroup>
