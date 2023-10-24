@@ -71,11 +71,36 @@ type State = {
     ShieldEnergy : int
     DirectionArray : int array2d
     StartAgain : bool
+    Error : bool
     }
 
 let readLine() = Console.ReadLine().Trim().ToUpper();
 
 let rnd = Random();
+
+let inputInteger (prompt : string) =
+    printf $"{prompt}"
+    let str = readLine()
+    let mutable num = 0
+
+    if Int32.TryParse(str, &num) then
+        num
+    else
+        0
+
+let inputDouble (prompt : string) =
+    printf $"{prompt}"
+    let str = readLine()
+    let mutable num = 0.0
+
+    if Double.TryParse(str, &num) then
+        num
+    else
+        0
+
+let inputString (prompt : string) =
+    printf $"{prompt}"
+    readLine()
 
 let quadrantCreate x y =
 
@@ -145,6 +170,7 @@ let createState =
         ShieldEnergy = 100
         DirectionArray = Array2D.init 8 2 (fun i j -> arrayOfMove[i][j])
         StartAgain = false;
+        Error = false;
         }
 
     let mutable totalStarbases = 0
@@ -229,16 +255,16 @@ let start() =
 
 let printSector state line =
     let klingonShip = "+K+"
-    let starbase = "<*>"
+    let starbase = ">!<"
     let star = " * "
     let space = "   "
-    let enterprise = " E "
+    let enterprise = "<E>"
 
     let printIt s =
         match s with
+        | { Starbase = true; } -> printf $" {starbase}"
         | { Enterprise = true; } -> printf $" {enterprise}"
         | { Klingon = true; } -> printf $" {klingonShip}"
-        | { Starbase = true; } -> printf $" {starbase}"
         | { Star = true;  } -> printf $" {star}"
         | _ -> printf $" {space}"
 
@@ -254,7 +280,7 @@ let shortRangeScan state =
     printfn " +--1---2---3---4---5---6---7---8-+"
     printf "1|"
     printSector state 0; printf "|1";
-    printfn $"        STARDATE            {state.CurrentStarDate}"
+    printfn $"        STARDATE            {state.StarDate}"
     printf "2|"
     printSector state 1; printf "|2";
     printfn $"        CONDITION           {state.Condition}"
@@ -281,7 +307,7 @@ let shortRangeScan state =
     state
 
 
-let changeQuadrant state newQuadrant =
+let changeQuadrant state newQuadrant : State =
     let clearSectors quadrant = 
         for i in [0..7] do
             for j in [0..7] do
@@ -295,10 +321,19 @@ let changeQuadrant state newQuadrant =
 
     let mutable cnt = 0
 
+    (* 
+        TODO: Currently putting Enterprize into a new sector BUT I think it should be in the sector the user 
+        has navigated to. This will is ok for the moment.
+    *)
     quadrant.Sectors.[fst sectorIndexs[0], snd sectorIndexs[0]]
         <- { quadrant.Sectors.[fst sectorIndexs[cnt], snd sectorIndexs[cnt]] with Enterprise = true }
 
     cnt <- cnt + 1
+
+    // TODO: THIS IS JUST FOR TESTING
+    //quadrant.Sectors.[fst sectorIndexs[cnt], snd sectorIndexs[cnt]]
+    //    <- { quadrant.Sectors.[fst sectorIndexs[cnt], snd sectorIndexs[cnt]] with Starbase = true }
+    //cnt <- cnt + 1
 
     [0..quadrant.Klingons - 1] |> List.iter(fun x -> 
         let newKlingonSector = sectorIndexs[x + cnt]
@@ -323,8 +358,11 @@ let changeQuadrant state newQuadrant =
 
     printfn ""
     printfn $"NOW ENTERING {quadrantName newQuadrant} QUADRANT . . ."
-    printfn ""
-    { state with CurrentSector = sectorIndexs[0]; CurrentQuadrant = newQuadrant }
+    if quadrant.Klingons > 0 then
+        printfn "COMBAT AREA **** CONDITION RED"
+        { state with CurrentSector = sectorIndexs[0]; CurrentQuadrant = newQuadrant; Condition = "*RED*" }
+    else
+        { state with CurrentSector = sectorIndexs[0]; CurrentQuadrant = newQuadrant; Condition = "GREEN";   }
 
 
 let startGame (state : State) =
@@ -414,26 +452,6 @@ let computerPhotonTorpedoData(state : State) =
 
     ()
 
-let inputInteger (prompt : string) =
-    printfn $"{prompt}"
-    let str = readLine()
-    let mutable num = 0
-
-    if Int32.TryParse(str, &num) then
-        num
-    else
-        0
-
-let inputDouble (prompt : string) =
-    printfn $"{prompt}"
-    let str = readLine()
-    let mutable num = 0.0
-
-    if Double.TryParse(str, &num) then
-        num
-    else
-        0
-
 let getCourse() : int option =
     let courseError() =
         printfn "   LT. SULU REPORTS, 'INCORRECT COURSE DATA, SIR!'"; 
@@ -447,7 +465,7 @@ let getCourse() : int option =
     else
         Some course
 
-let getWarp state : double option =
+let getWarp state : int option =
     let warpError warpSpeed =
         printfn "   CHIEF ENGINEER SCOTT REPORTS, 'THE ENGINES WON'T TAKE"
         printfn $"   WARP {warpSpeed}!'"; 
@@ -468,7 +486,7 @@ let getWarp state : double option =
         if warpFactor > 0 && warpFactor <= 8 then
             let n = int (warpFactor * 8.0 + 0.5)
             if state.Energy - n >= 0 then
-                Some warpFactor
+                Some n
             else
                 printfn "ENGINEERING REPORTS   'INSUFFICIENT ENERGY AVAILABLE"
                 printfn $"                     FOR MANEUVERING AT WARP {warpFactor}!'"
@@ -486,6 +504,53 @@ let getWarp state : double option =
                 warpError warpFactor
                 None
 
+let navigateQuadrant state x y : State =
+    if fst state.CurrentQuadrant + x < 0 || fst state.CurrentQuadrant + x > 7 || snd state.CurrentQuadrant + y < 0 || snd state.CurrentQuadrant + y > 7 then
+        printfn "LT. UHURA REPORTS MESSAGE FROM STARFLEET COMMAND:"
+        printfn "  'PERMISSION TO ATTEMPT CROSSING OF GALACTIC PERIMETER"
+        printfn "  IS HEREBY *DENIED*.  SHUT DOWN YOUR ENGINES.'"
+        printfn "CHIEF ENGINEER SCOTT REPORTS  'WARP ENGINES SHUT DOWN"
+        printfn $"AT SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1} OF QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
+        { state with Error = true;}
+    else
+        let newQuadrant = (fst state.CurrentQuadrant + x, snd state.CurrentQuadrant + y)
+        
+        changeQuadrant state newQuadrant
+
+let navigateSector state course : State =
+    let x1 = state.DirectionArray[course,0]
+    let x2 = state.DirectionArray[course,1]
+
+    if fst state.CurrentSector + x1 < 0 || fst state.CurrentSector + x1 > 7 || snd state.CurrentSector + x2 < 0 || snd state.CurrentSector + x2 > 7 then
+        navigateQuadrant state x1 x2
+    else
+        let quadrant = state.Galaxy.Value.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant]
+        let sector = quadrant.Sectors.[fst state.CurrentSector + x1, snd state.CurrentSector + x2]
+
+        if sector.Klingon || sector.Star then
+             printfn $"WARP ENGINES SHUT DOWN AT SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1} DUE TO BAD NAVIGATION"
+             { state with Error = true }
+        else if sector.Starbase then
+            (* we have docked with starbase *)
+            printfn " SHIELDS DROPPED FOR DOCKING PURPOSES"
+            for i in [0..7] do
+                for j in [0..7] do
+                    if quadrant.Sectors.[i, j].Enterprise then
+                        quadrant.Sectors.[i, j] <- { quadrant.Sectors.[i, j] with Enterprise = false }
+                    if i = fst state.CurrentSector + x1 && j = snd state.CurrentSector + x2 then
+                        quadrant.Sectors.[i, j] <- { quadrant.Sectors.[i, j] with Enterprise = true }
+            { state with ShieldEnergy = 0; Condition = "DOCKED"; CurrentSector = (fst state.CurrentSector + x1, snd state.CurrentSector + x2) }
+        else    
+            for i in [0..7] do
+                for j in [0..7] do
+                    if quadrant.Sectors.[i, j].Enterprise then
+                        quadrant.Sectors.[i, j] <- { quadrant.Sectors.[i, j] with Enterprise = false }
+                    if i = fst state.CurrentSector + x1 && j = snd state.CurrentSector + x2 then
+                        quadrant.Sectors.[i, j] <- { quadrant.Sectors.[i, j] with Enterprise = true }
+
+            { state with CurrentSector = (fst state.CurrentSector + x1, snd state.CurrentSector + x2); }
+
+
 let navigate state =
     let course = getCourse()
     
@@ -493,19 +558,17 @@ let navigate state =
     | None -> state
     | Some course ->
         let warpSpeed = getWarp state
+        printfn ""
 
         match warpSpeed with
         | None -> state
         | Some warpSpeed ->
-            let x1 = state.DirectionArray[course,0]
-            let x2 = state.DirectionArray[course,1]
+            let mutable s1 = state
+            for i = 0 to warpSpeed - 1 do
+                if s1.Error = false then
+                    s1 <- navigateSector s1 course
+            shortRangeScan { s1 with Error = false;}
 
-            if fst state.CurrentQuadrant + x1 < 0 || fst state.CurrentQuadrant + x1 > 7 || snd state.CurrentQuadrant + x2 < 0 || snd state.CurrentQuadrant + x2 > 7 then
-                printfn $"WARP ENGINES SHUT DOWN AT SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1} DUE TO BAD NAVIGATION"
-                state
-            else
-                let newQuadrant = (fst state.CurrentQuadrant + x1, snd state.CurrentQuadrant + x2)
-                changeQuadrant state newQuadrant
 
 let longRangeScan state =
     let getQuadrant (state : State) (qadrantId : (int * int)) : Quadrant option =
@@ -547,6 +610,16 @@ let dam state =
     printfn "DAM"
     state
 
+let validNav() =
+    printfn "NAVIGATION DIRECTIONS"
+    printfn "====================="
+    printfn "2   1   8"
+    printfn "  \ ' /"
+    printfn "3 - * - 7"
+    printfn "  / ' \ "
+    printfn "4   5   6"
+    
+
 let computer(state : State) =
     let commandMenu() =
         printfn "   "
@@ -558,10 +631,10 @@ let computer(state : State) =
         printfn "4 = DIRECTION/DISTANCE CALCULATOR"
         printfn "5 = GALAXY 'REGION NAME' MAP"
         printfn "6 = GALAXY MAP"
-        printfn "7 = EXIT LIBRARY-COMPUTER"
+        printfn "7 = NAVIGATION DIRECTIONS"
+        printfn "8 = EXIT LIBRARY-COMPUTER"
         printfn "   "
-        printf "COMMAND ? "
-        readLine();
+        inputString "COMMAND ? "
 
     let getCommand() =
         let mutable validCommand = false;
@@ -570,7 +643,7 @@ let computer(state : State) =
         while not validCommand do
             let mutable cmd = commandMenu()
             cmdOption <- match cmd with
-                            | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" -> validCommand <- true; cmd;
+                            | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" -> validCommand <- true; cmd;
                             | _ -> printfn "Invalid command"; "";
             printfn ""
 
@@ -582,7 +655,8 @@ let computer(state : State) =
                 | "1" -> computerStatusReport state
                 | "2" -> computerPhotonTorpedoData state
                 | "6" -> galaxyMap(state.CurrentQuadrant)
-                | "7" -> isOk <- false
+                | "7" -> validNav() 
+                | "8" -> isOk <- false
                 | _ -> ();
     state
 
@@ -605,40 +679,31 @@ let endOfMission(state) =
 let mainLoop() =
     start() |> ignore
 
+    let commands = [
+            ("NAV", "TO SET COURSE"); 
+            ("SRS", "FOR SHORT RANGE SENSOR SCAN"); 
+            ("LRS", "FOR LONG RANGE SENSOR SCAN"); 
+            ("PHA", "TO FIRE PHASERS"); 
+            ("TOR", "TO FIRE PHOTON TORPEDOES"); 
+            ("SHE", "FOR SHIELD CONTROL"); 
+            ("DAM", "TO GET DAMAGE REPORTS"); 
+            ("COM", "TO CALL ON LIBRARY-COMPUTER"); 
+            ("XXX", "TO RESIGN YOUR COMMAND")
+        ]
+
     let commandMenu() =
         printfn "   "
         printfn "ENTER ONE OF THE FOLLOWING COMMANDS:"
-        printfn "NAV - TO SET COURSE"
-        printfn "SRS - FOR SHORT RANGE SENSOR SCAN"
-        printfn "LRS - FOR LONG RANGE SENSOR SCAN"
-        printfn "PHA - TO FIRE PHASERS"
-        printfn "TOR - TO FIRE PHOTON TORPEDOES"
-        printfn "SHE - FOR SHIELD CONTROL"
-        printfn "DAM - TO GET DAMAGE REPORTS"
-        printfn "COM - TO CALL ON LIBRARY-COMPUTER"
-        printfn "XXX - TO RESIGN YOUR COMMAND"
+        commands |> List.iter(fun (cmd, desc) -> printfn $"{cmd} - {desc}")
         printfn "   "
-        printf "COMMAND ? "
-        readLine();
-
-    let getCommand() =
-        let mutable validCommand = false;
-        let mutable command = "";
-
-        while not validCommand do
-            let cmd = commandMenu()
-            command <- match cmd with
-                        | "NAV" | "SRS" | "LRS" | "PHA" | "TOR" | "SHE" | "DAM" | "COM" | "XXX" -> validCommand <- true; cmd;
-                        | _ -> printfn "Invalid command"; "";
-        
-        printfn ""
-        command
+        inputString "COMMAND ? "
 
     let mutable state = startGame createState
+    shortRangeScan state |> ignore
     let mutable isOk = true
     
     while isOk do
-        state <- match getCommand() with
+        state <- match commandMenu() with
                  | "NAV" -> navigate state
                  | "SRS" -> shortRangeScan state
                  | "LRS" -> longRangeScan state
