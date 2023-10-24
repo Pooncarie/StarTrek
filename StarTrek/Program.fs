@@ -52,12 +52,11 @@ type State = {
     Galaxy : Galaxy option
     StarDate : int
     CurrentStarDate : int
-    TotalStardate : int
+    NumberOfStarDays : int
     Condition : string
     CurrentQuadrant : QuadrantId
     CurrentSector : SectorId
     Torpedoes : int
-    TotalEnergy : int
     TotalKlingons : int
     TotalStarbases : int
     TotalStars : int
@@ -133,6 +132,10 @@ let quadrantCreate x y =
     quadrant
 
 
+let initialEnergy = 3000
+let initialShields = 0
+let initialTorpedoes = 10
+
 let createState = 
     let createGalaxy = { Quadrants = Array2D.init 8 8 (fun i j -> quadrantCreate i j) }
 
@@ -149,14 +152,13 @@ let createState =
 
     let s = {
         Galaxy = Some createGalaxy
-        StarDate = 0
+        StarDate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
         CurrentStarDate = 0
-        TotalStardate = 0
+        NumberOfStarDays = 25 + (int) (rnd.NextDouble() * 10.0)
         Condition = "GREEN"
         CurrentQuadrant = QuadrantId(0, 0)
         CurrentSector = SectorId(0,0)
-        Torpedoes = 10
-        TotalEnergy = 3000
+        Torpedoes = initialTorpedoes
         TotalKlingons = 0
         TotalStarbases = 0
         TotalStars = 0
@@ -166,8 +168,8 @@ let createState =
         PhasersDamage = 0
         ComputerDamage = 0
         DeflectorDamage = 0
-        Energy = 1000
-        ShieldEnergy = 100
+        Energy = initialEnergy
+        ShieldEnergy = initialShields
         DirectionArray = Array2D.init 8 2 (fun i j -> arrayOfMove[i][j])
         StartAgain = false;
         Error = false;
@@ -184,11 +186,7 @@ let createState =
             totalKlingons <- totalKlingons + quadrant.Klingons
             totalStars <- totalStars + quadrant.Stars
 
-    let totalStarDate = 25 + (int) (rnd.NextDouble() * 10.0)
-    (* T  & T0 *)
-    let starDate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
-
-    { s with TotalKlingons = totalKlingons; TotalStarbases = totalStarbases; TotalStars = totalStars; StarDate = starDate; TotalStardate = totalStarDate; CurrentStarDate = starDate; }
+    { s with TotalKlingons = totalKlingons; TotalStarbases = totalStarbases; TotalStars = totalStars;  }
 
 
 let quadrantName quadrant =
@@ -275,6 +273,16 @@ let printSector state line =
 
 
 let shortRangeScan state = 
+    let printCondition(state : State) =
+        let cc = Console.ForegroundColor
+        match state.Condition with
+        | "GREEN" -> Console.ForegroundColor <- ConsoleColor.Green; 
+        | "YELLOW" -> Console.ForegroundColor <- ConsoleColor.Yellow;
+        | "*RED*" -> Console.ForegroundColor <- ConsoleColor.Red;
+        | _ -> Console.ForegroundColor <- ConsoleColor.White;
+        printf $"{state.Condition}"
+        Console.ForegroundColor <- cc
+
     printfn $"SHORT RANGE SCAN FOR QUADRANT {(quadrantName state.CurrentQuadrant)}"
     printfn "   "
     printfn " +--1---2---3---4---5---6---7---8-+"
@@ -283,7 +291,7 @@ let shortRangeScan state =
     printfn $"        STARDATE            {state.StarDate}"
     printf "2|"
     printSector state 1; printf "|2";
-    printfn $"        CONDITION           {state.Condition}"
+    printf $"        CONDITION           "; printCondition state; printfn ""
     printf "3|"
     printSector state 2; printf "|3";
     printfn $"        QUADRANT            {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
@@ -295,7 +303,7 @@ let shortRangeScan state =
     printfn $"        PHOTO TORPEDOES     {state.Torpedoes}"
     printf "6|"
     printSector state 5; printf "|6";
-    printfn $"        TOTAL ENERGY        {state.Energy}"
+    printfn $"        TOTAL ENERGY        {state.Energy + state.ShieldEnergy}"
     printf "7|"
     printSector state 6; printf "|7";
     printfn $"        SHIELDS             {state.ShieldEnergy}"
@@ -373,7 +381,7 @@ let startGame (state : State) =
     printfn "YOUR ORDERS ARE AS FOLLOWS:"
     printfn $"   DESTROY THE {state.TotalKlingons} KLINGON WARSHIPS WHICH HAVE INVADED" 
     printfn "   THE GALAXY BEFORE THEY CAN ATTACK FEDERATION HEADQUARTERS"
-    printfn $"   ON STARDATE {state.StarDate}. THIS GIVES YOU {(state.StarDate - state.CurrentStarDate)} DAYS. THERE ARE {state.TotalStarbases}"   
+    printfn $"   ON STARDATE {state.StarDate + state.NumberOfStarDays}. THIS GIVES YOU {(state.NumberOfStarDays)} DAYS. THERE ARE {state.TotalStarbases}"   
     printfn "   STARBASES IN THE GALAXY FOR RESUPPLYING YOUR SHIP."
     printfn ""
     printfn ""
@@ -397,7 +405,7 @@ let galaxyMap(quadrant) =
 let computerStatusReport state =
     printfn "STATUS REPORT:"
     printfn $"    KLINGONS LEFT: {state.TotalKlingons}"
-    printfn $"    MISSION MUST BE COMPLETED IN {int (0.1 * double((state.CurrentStarDate + state.TotalStardate - state.StarDate) * 10)) } STARDATES"
+    printfn $"    MISSION MUST BE COMPLETED IN {state.NumberOfStarDays} STARDATES"
     if state.TotalStarbases > 0 then
         printfn $"    THE FEDERATION IS MAINTAINING {state.TotalStarbases} STARBASES IN THE GALAXY"
     else
@@ -531,7 +539,7 @@ let navigateSector state course : State =
              printfn $"WARP ENGINES SHUT DOWN AT SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1} DUE TO BAD NAVIGATION"
              { state with Error = true }
         else if sector.Starbase then
-            (* we have docked with starbase *)
+            (* we have docked with starbase, update Energy, Torpedoes & ShieldEnergy to reflect this *)
             printfn " SHIELDS DROPPED FOR DOCKING PURPOSES"
             for i in [0..7] do
                 for j in [0..7] do
@@ -539,7 +547,7 @@ let navigateSector state course : State =
                         quadrant.Sectors.[i, j] <- { quadrant.Sectors.[i, j] with Enterprise = false }
                     if i = fst state.CurrentSector + x1 && j = snd state.CurrentSector + x2 then
                         quadrant.Sectors.[i, j] <- { quadrant.Sectors.[i, j] with Enterprise = true }
-            { state with ShieldEnergy = 0; Condition = "DOCKED"; CurrentSector = (fst state.CurrentSector + x1, snd state.CurrentSector + x2) }
+            { state with Condition = "DOCKED"; CurrentSector = (fst state.CurrentSector + x1, snd state.CurrentSector + x2); Energy = initialEnergy; Torpedoes = initialTorpedoes; ShieldEnergy = initialShields }
         else    
             for i in [0..7] do
                 for j in [0..7] do
