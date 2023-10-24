@@ -48,10 +48,16 @@ type Galaxy = {
     Quadrants : Quadrant array2d 
     }
 
+type DistanceCoordinates = {
+    InitialX : int
+    InitialY : int
+    FinalX : int
+    FinalY : int
+    }
+
 type State = {
     Galaxy : Galaxy option
     StarDate : int
-    CurrentStarDate : int
     NumberOfStarDays : int
     Condition : string
     CurrentQuadrant : QuadrantId
@@ -71,6 +77,7 @@ type State = {
     DirectionArray : int array2d
     StartAgain : bool
     Error : bool
+    DistanceCoordinates : DistanceCoordinates option
     }
 
 let readLine() = Console.ReadLine().Trim().ToUpper();
@@ -100,6 +107,29 @@ let inputDouble (prompt : string) =
 let inputString (prompt : string) =
     printf $"{prompt}"
     readLine()
+
+let inputCoordinate (prompt : string) =
+    printf $"{prompt}"
+    let str = readLine()
+    let mutable numX = 0
+    let mutable numY = 0
+    let bits = str.Split(',')
+
+    if bits.Length <> 2 then
+        (0, 0)
+    else
+        let x = bits.[0].Trim()
+        let y = bits.[1].Trim()
+        if Int32.TryParse(x, &numX) then
+            if Int32.TryParse(y, &numY) then
+                (numX, numY)
+            else
+                (0, 0)
+        else
+            (0, 0)
+
+    
+
 
 let quadrantCreate x y =
 
@@ -153,7 +183,6 @@ let createState =
     let s = {
         Galaxy = Some createGalaxy
         StarDate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
-        CurrentStarDate = 0
         NumberOfStarDays = 25 + (int) (rnd.NextDouble() * 10.0)
         Condition = "GREEN"
         CurrentQuadrant = QuadrantId(0, 0)
@@ -173,6 +202,7 @@ let createState =
         DirectionArray = Array2D.init 8 2 (fun i j -> arrayOfMove[i][j])
         StartAgain = false;
         Error = false;
+        DistanceCoordinates = None
         }
 
     let mutable totalStarbases = 0
@@ -391,8 +421,8 @@ let startGame (state : State) =
 
 
 (* Show all the quadrant names, mostly for debugging purposes. *)
-let galaxyMap(quadrant) = 
-    printfn $"CURRENT QUADRANT {(quadrantName quadrant)}"
+let galaxyMap state  = 
+    printfn $"CURRENT QUADRANT {(quadrantName state.CurrentQuadrant)}"
     printfn "+-I-----------+-II----------+-III---------+-IV----------+-I-----------+-II----------+-III---------+-IV----------+"
     for i in [0..7] do
         printf "| "
@@ -401,6 +431,7 @@ let galaxyMap(quadrant) =
             printf $"{name} | "
         printfn ""
         printfn "+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+"
+    state
 
 let computerStatusReport state =
     printfn "STATUS REPORT:"
@@ -410,6 +441,7 @@ let computerStatusReport state =
         printfn $"    THE FEDERATION IS MAINTAINING {state.TotalStarbases} STARBASES IN THE GALAXY"
     else
         printfn "    YOUR STUPIDITY HAS LEFT YOU ON YOUR ON IN THE GALAXY -- YOU HAVE NO STARBASES LEFT!"
+    state
 
 let getCoordinates(state : State) =
     printfn "DIRECTION/DISTANCE CALCULATOR:"
@@ -418,25 +450,29 @@ let getCoordinates(state : State) =
     let initialCoordinate = readLine
     printf "FINAL COORDINATES (X,Y)"
     let finalCoordinate = readLine
-    ()
+    state
     
 (* 
-    C1 -> fst initialCoordinate 
-    A -> snd initialCoordinate
-    W1 -> fst finalCoordinate
-    X -> snd finalCoordinate
+    C1 -> coords.InitialX 
+    A -> coords.InitialY
+    W1 -> coords.FinalX
+    X -> coords.FinalY
 *)
-let distanceCalculator (initialCoordinate : (int * int)) (finalCoordinate : (int * int)) = 
-    let x = snd finalCoordinate - snd initialCoordinate
-    let a = fst initialCoordinate - fst finalCoordinate
-    if x >= 0 then
-        if a < 0 then
-            let c1 = 7
-            if abs a < abs x then
-                printfn $"DIRECTION = {c1 + (( ((abs x) - (abs a)) + (abs x)) / (abs x))} "
-            else
-                printfn $"DIRECTION = {c1 + ((abs x) / (abs a))}"
-            printfn $"DISTANCE = {sqrt (double x * double x + double a * double a)}"
+
+let distanceCalculator state = 
+    if state.DistanceCoordinates.IsNone then
+        printfn "NO COORDINATES ENTERED"
+    else
+        let x = state.DistanceCoordinates.Value.FinalY - state.DistanceCoordinates.Value.InitialY
+        let a = state.DistanceCoordinates.Value.InitialX - state.DistanceCoordinates.Value.FinalX
+        if x >= 0 then
+            if a < 0 then
+                let c1 = 7
+                if abs a < abs x then
+                    printfn $"DIRECTION = {c1 + (( ((abs x) - (abs a)) + (abs x)) / (abs x))} "
+                else
+                    printfn $"DIRECTION = {c1 + ((abs x) / (abs a))}"
+                printfn $"DISTANCE = {sqrt (double x * double x + double a * double a)}"
     0
 
 let computerPhotonTorpedoData(state : State) =
@@ -450,6 +486,7 @@ let computerPhotonTorpedoData(state : State) =
         go 0 0
 
     let quadrant = state.Galaxy.Value.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant];
+
     if quadrant.Klingons > 0 then
         printfn "FROM ENTERPRISE TO KLINGON BATTLE CRUISER"
         let initialCoordinate = state.CurrentSector
@@ -458,8 +495,24 @@ let computerPhotonTorpedoData(state : State) =
         | None -> printfn "NO KLINGON IN THIS QUADRANT"; 
         | Some finalCoordinate -> printfn $"Distance {distanceCalculator initialCoordinate finalCoordinate}";
 
-    ()
+    state
 
+let directionDistanceCalculator state =
+    printfn "DIRECTION/DISTANCE CALCULATOR:"
+    printfn $"YOU ARE AT QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1} SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
+    printfn ""
+    let initCoordinate = inputCoordinate "PLEASE ENTER INITIAL COORDINATES (X,Y): "
+    let finalCoordinate = inputCoordinate "PLEASE ENTER FINAL COORDINATES (X,Y): "
+
+    let coords = {
+        InitialX = fst initCoordinate
+        InitialY = snd initCoordinate
+        FinalX = fst finalCoordinate
+        FinalY = snd finalCoordinate
+        }
+
+    { state with DistanceCoordinates = Some coords; }
+    
 let getCourse() : int option =
     let courseError() =
         printfn "   LT. SULU REPORTS, 'INCORRECT COURSE DATA, SIR!'"; 
@@ -618,7 +671,7 @@ let dam state =
     printfn "DAM"
     state
 
-let validNav() =
+let validNav state =
     printfn "NAVIGATION DIRECTIONS"
     printfn "====================="
     printfn "2   1   8"
@@ -626,7 +679,7 @@ let validNav() =
     printfn "3 - * - 7"
     printfn "  / ' \ "
     printfn "4   5   6"
-    
+    state
 
 let computer(state : State) =
     let commandMenu() =
@@ -658,15 +711,18 @@ let computer(state : State) =
         cmdOption
 
     let mutable isOk = true
+    let mutable st = state
+
     while isOk do
-        match getCommand() with
+        st <- match getCommand() with
                 | "1" -> computerStatusReport state
                 | "2" -> computerPhotonTorpedoData state
-                | "6" -> galaxyMap(state.CurrentQuadrant)
-                | "7" -> validNav() 
-                | "8" -> isOk <- false
-                | _ -> ();
-    state
+                | "4" -> directionDistanceCalculator state
+                | "6" -> galaxyMap state
+                | "7" -> validNav state
+                | "8" -> isOk <- false; state
+                | _ -> st;
+    st
 
 let endOfMission(state) =
     printfn $"THERE WERE {state.TotalKlingons} KLINGON BATTLE CRUISERS LEFT AT"
