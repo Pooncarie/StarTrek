@@ -24,65 +24,13 @@
 *)
 
 open System
-
-type SectorId = int * int
-type QuadrantId = int * int
-
-type Sector = {
-    Starbase : bool
-    Star : bool
-    Enterprise : bool
-    Klingon : bool
-    SectorId : SectorId
-}
-
-type Quadrant = {
-    Sectors : Sector array2d
-    Starbases : int
-    Stars : int
-    Klingons : int
-    QuadrantId : QuadrantId
-}
-
-type Galaxy = {
-    Quadrants : Quadrant array2d 
-    }
-
-type DistanceCoordinates = {
-    InitialX : int
-    InitialY : int
-    FinalX : int
-    FinalY : int
-    }
-
-type State = {
-    Galaxy : Galaxy option
-    StarDate : int
-    NumberOfStarDays : int
-    Condition : string
-    CurrentQuadrant : QuadrantId
-    CurrentSector : SectorId
-    Torpedoes : int
-    TotalKlingons : int
-    TotalStarbases : int
-    TotalStars : int
-    EngineDamage : int                  // D(1)
-    SRS_Damage : int                    // D(2)
-    LRS_Damage : int                    // D(3)
-    PhasersDamage : int                 // D(4) 
-    DeflectorDamage : int               // D(7)
-    ComputerDamage : int                // D(8)
-    Energy : int
-    ShieldEnergy : int
-    DirectionArray : int array2d
-    StartAgain : bool
-    Error : bool
-    DistanceCoordinates : DistanceCoordinates option
-    }
+open Domain
 
 let readLine() = Console.ReadLine().Trim().ToUpper();
 
 let rnd = Random();
+
+let square x = x * x
 
 let inputInteger (prompt : string) =
     printf $"{prompt}"
@@ -128,9 +76,6 @@ let inputCoordinate (prompt : string) =
         else
             (0, 0)
 
-    
-
-
 let quadrantCreate x y =
 
     let klingonCount() =
@@ -161,7 +106,6 @@ let quadrantCreate x y =
 
     quadrant
 
-
 let initialEnergy = 3000
 let initialShields = 0
 let initialTorpedoes = 10
@@ -170,14 +114,15 @@ let createState =
     let createGalaxy = { Quadrants = Array2D.init 8 8 (fun i j -> quadrantCreate i j) }
 
     let arrayOfMove = [|
-            [| -1; 0 |]    
-            [| -1; -1 |]   
-            [| 0; -1 |]    
-            [| 1; -1 |]    
-            [| 1; 0 |]     
-            [| 1; 1 |]     
-            [| 0; 1|]      
-            [| -1; 1 |]    
+        [| 0; 1|]
+        [| -1; 1|]
+        [| -1; 0|]
+        [| -1; -1|]
+        [| 0; -1|]
+        [| 1; -1|]
+        [| 1; 0|]
+        [| 1; 1|]
+        [| 0; 1|]
         |]
 
     let s = {
@@ -202,7 +147,6 @@ let createState =
         DirectionArray = Array2D.init 8 2 (fun i j -> arrayOfMove[i][j])
         StartAgain = false;
         Error = false;
-        DistanceCoordinates = None
         }
 
     let mutable totalStarbases = 0
@@ -369,9 +313,9 @@ let changeQuadrant state newQuadrant : State =
     cnt <- cnt + 1
 
     // TODO: THIS IS JUST FOR TESTING
-    //quadrant.Sectors.[fst sectorIndexs[cnt], snd sectorIndexs[cnt]]
-    //    <- { quadrant.Sectors.[fst sectorIndexs[cnt], snd sectorIndexs[cnt]] with Starbase = true }
-    //cnt <- cnt + 1
+    quadrant.Sectors.[fst sectorIndexs[cnt], snd sectorIndexs[cnt]]
+        <- { quadrant.Sectors.[fst sectorIndexs[cnt], snd sectorIndexs[cnt]] with Starbase = true }
+    cnt <- cnt + 1
 
     [0..quadrant.Klingons - 1] |> List.iter(fun x -> 
         let newKlingonSector = sectorIndexs[x + cnt]
@@ -443,60 +387,26 @@ let computerStatusReport state =
         printfn "    YOUR STUPIDITY HAS LEFT YOU ON YOUR ON IN THE GALAXY -- YOU HAVE NO STARBASES LEFT!"
     state
 
-let getCoordinates(state : State) =
-    printfn "DIRECTION/DISTANCE CALCULATOR:"
-    printfn $"YOU ARE AT QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1} SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
-    printf "PLEASE ENTER INITIAL COORDINATES (X,Y)"
-    let initialCoordinate = readLine
-    printf "FINAL COORDINATES (X,Y)"
-    let finalCoordinate = readLine
-    state
-    
-(* 
-    C1 -> coords.InitialX 
-    A -> coords.InitialY
-    W1 -> coords.FinalX
-    X -> coords.FinalY
-*)
+let distanceCalculator coords = 
+    let x = coords.FinalY - coords.InitialY 
+    let y = coords.FinalX - coords.InitialX 
 
-let distanceCalculator state = 
-    if state.DistanceCoordinates.IsNone then
-        printfn "NO COORDINATES ENTERED"
-    else
-        let x = state.DistanceCoordinates.Value.FinalY - state.DistanceCoordinates.Value.InitialY
-        let a = state.DistanceCoordinates.Value.InitialX - state.DistanceCoordinates.Value.FinalX
-        if x >= 0 then
-            if a < 0 then
-                let c1 = 7
-                if abs a < abs x then
-                    printfn $"DIRECTION = {c1 + (( ((abs x) - (abs a)) + (abs x)) / (abs x))} "
-                else
-                    printfn $"DIRECTION = {c1 + ((abs x) / (abs a))}"
-                printfn $"DISTANCE = {sqrt (double x * double x + double a * double a)}"
-    0
-
-let computerPhotonTorpedoData(state : State) =
-    let findKlingon (arr: Sector [,]) = 
-        let rec go x y =
-          if y >= arr.GetLength 1 then None
-          elif x >= arr.GetLength 0 then go 0 (y+1)
-          elif arr.[x,y].Klingon = true then Some (x,y)
-          else go (x+1) y
+    let d = match (x, y) with
+                | (x,y) when y = 0 && x > 0 -> 1
+                | (x,y) when y = 0 && x < 0 -> 5
+                | (x,y) when x = 0 && y > 0 -> 7
+                | (x,y) when x = 0 && y < 0 -> 3
+                | (x,y) when x > 0 && y > 0 -> 8
+                | (x,y) when x > 0 && y < 0 -> 2
+                | (x,y) when x < 0 && y < 0 -> 4
+                | (x,y) when x < 0 && y > 0 -> 6
+                | _ ->  0
+       
+    printfn $"DIRECTION = {d}"
+    printfn $"DISTANCE = {sqrt (double (square y + square x)) }"
+    ()
         
-        go 0 0
-
-    let quadrant = state.Galaxy.Value.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant];
-
-    if quadrant.Klingons > 0 then
-        printfn "FROM ENTERPRISE TO KLINGON BATTLE CRUISER"
-        let initialCoordinate = state.CurrentSector
-        let finalCoordinate = findKlingon quadrant.Sectors
-        match finalCoordinate with
-        | None -> printfn "NO KLINGON IN THIS QUADRANT"; 
-        | Some finalCoordinate -> printfn $"Distance {distanceCalculator initialCoordinate finalCoordinate}";
-
-    state
-
+(* LINE 8150 *)   
 let directionDistanceCalculator state =
     printfn "DIRECTION/DISTANCE CALCULATOR:"
     printfn $"YOU ARE AT QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1} SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
@@ -511,8 +421,59 @@ let directionDistanceCalculator state =
         FinalY = snd finalCoordinate
         }
 
-    { state with DistanceCoordinates = Some coords; }
+    distanceCalculator coords
+    state
+
+let getKlingons state =
+    let mutable klingons = []
+    let quadrant = state.Galaxy.Value.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant];
+
+    for i in [0..7] do
+        for j in [0..7] do
+            if quadrant.Sectors[i, j].Klingon then
+                klingons <- (i, j) :: klingons
+
+
+    klingons
+
+let getStarbases state = 
+    let mutable starbases = []
+    let quadrant = state.Galaxy.Value.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant];
+
+    for i in [0..7] do
+        for j in [0..7] do
+            if quadrant.Sectors[i, j].Starbase then
+                starbases <- (i, j) :: starbases
+
+    starbases
+
+let computerPhotonTorpedoData(state : State) =
+    getKlingons state |> List.iter(fun x -> 
+        printf "FROM ENTERPRISE TO KLINGON BATTLE CRUISER "; 
+        distanceCalculator { 
+            InitialX = fst state.CurrentSector + 1;
+            InitialY = snd state.CurrentSector + 1; 
+            FinalX = fst x + 1; 
+            FinalY = snd x + 1})
+
+    state
     
+let computerStarbaseData state =
+    let starbases = getStarbases state
+
+    if starbases.Length = 0 then
+        printfn "MR. SPOCK REPORTS, 'SENSORS SHOW NO STARBASES IN THIS QUADRANT.'"
+    else
+        starbases |> List.iter(fun x -> 
+            printf "FROM ENTERPRISE TO STARBASE "; 
+            distanceCalculator { 
+                InitialX = fst state.CurrentSector + 1;
+                InitialY = snd state.CurrentSector + 1; 
+                FinalX = fst x + 1; 
+                FinalY = snd x + 1})
+
+    state
+
 let getCourse() : int option =
     let courseError() =
         printfn "   LT. SULU REPORTS, 'INCORRECT COURSE DATA, SIR!'"; 
@@ -524,7 +485,7 @@ let getCourse() : int option =
         courseError()
         None
     else
-        Some course
+        Some course 
 
 let getWarp state : int option =
     let warpError warpSpeed =
@@ -578,7 +539,8 @@ let navigateQuadrant state x y : State =
         
         changeQuadrant state newQuadrant
 
-let navigateSector state course : State =
+(* C1 = course *)
+let navigateSector state course  : State =
     let x1 = state.DirectionArray[course,0]
     let x2 = state.DirectionArray[course,1]
 
@@ -655,9 +617,31 @@ let longRangeScan state =
 
     state
 
-let pha state =
-    printfn "PHA"
+let firePhasers state =
+    if state.PhasersDamage < 0 then
+        printfn "PHASER CONTROL IS INOPERABLE."
+    else
+        let klingons = getKlingons state
+
+        if klingons.Length = 0 then 
+            printfn ""
+            printfn "SCIENCE OFFICER SPOCK REPORTS  'SENSORS SHOW NO ENEMY SHIPS"
+            printfn "                                IN THIS QUADRANT'"
+        
+        else 
+            if state.ComputerDamage < 0 then
+                printfn "COMPUTER FAILURE HAMPERS ACCURACY"
+
+            printfn "PHASERS LOCKED ON TARGET;  "
+            printfn $"ENERGY AVAILABLE = {state.Energy} UNITS"
+
+            let noOfUnits = inputInteger "NUMBER OF UNITS TO FIRE: "
+
+            if noOfUnits > 0 && noOfUnits < state.Energy then
+                printfn ""
+
     state
+            
 
 let tor state =
     printfn "TOR"
@@ -674,11 +658,11 @@ let dam state =
 let validNav state =
     printfn "NAVIGATION DIRECTIONS"
     printfn "====================="
-    printfn "2   1   8"
+    printfn "4   3   2"
     printfn "  \ ' /"
-    printfn "3 - * - 7"
+    printfn "5 - * - 1"
     printfn "  / ' \ "
-    printfn "4   5   6"
+    printfn "6   7   8"
     state
 
 let computer(state : State) =
@@ -690,10 +674,9 @@ let computer(state : State) =
         printfn "2 = PHOTON TORPEDO DATA"
         printfn "3 = STARBASE NAV DATA"
         printfn "4 = DIRECTION/DISTANCE CALCULATOR"
-        printfn "5 = GALAXY 'REGION NAME' MAP"
-        printfn "6 = GALAXY MAP"
-        printfn "7 = NAVIGATION DIRECTIONS"
-        printfn "8 = EXIT LIBRARY-COMPUTER"
+        printfn "5 = GALAXY MAP"
+        printfn "6 = NAVIGATION DIRECTIONS"
+        printfn "7 = EXIT LIBRARY-COMPUTER"
         printfn "   "
         inputString "COMMAND ? "
 
@@ -704,7 +687,7 @@ let computer(state : State) =
         while not validCommand do
             let mutable cmd = commandMenu()
             cmdOption <- match cmd with
-                            | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" -> validCommand <- true; cmd;
+                            | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" -> validCommand <- true; cmd;
                             | _ -> printfn "Invalid command"; "";
             printfn ""
 
@@ -717,10 +700,11 @@ let computer(state : State) =
         st <- match getCommand() with
                 | "1" -> computerStatusReport state
                 | "2" -> computerPhotonTorpedoData state
+                | "3" -> computerStarbaseData state
                 | "4" -> directionDistanceCalculator state
-                | "6" -> galaxyMap state
-                | "7" -> validNav state
-                | "8" -> isOk <- false; state
+                | "5" -> galaxyMap state
+                | "6" -> validNav state
+                | "7" -> isOk <- false; state
                 | _ -> st;
     st
 
@@ -771,7 +755,7 @@ let mainLoop() =
                  | "NAV" -> navigate state
                  | "SRS" -> shortRangeScan state
                  | "LRS" -> longRangeScan state
-                 | "PHA" -> pha state
+                 | "PHA" -> firePhasers state
                  | "TOR" -> tor state
                  | "SHE" -> she state
                  | "DAM" -> dam state
