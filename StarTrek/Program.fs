@@ -118,6 +118,7 @@ let createState =
 
     let s = {
         Galaxy = Some createGalaxy
+        Enterprise = None
         StarDate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
         NumberOfStarDays = 25 + (int) (rnd.NextDouble() * 10.0)
         CurrentQuadrant = QuadrantId(0, 0)
@@ -226,18 +227,6 @@ let printSector state line =
     for i in [0..7] do 
        printIt(sector[line, i])
     done
- 
-let getEnterprise state =
-    let quadrant = state.Galaxy.Value.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant];
-    let mutable enterprise = None
-
-    for i in [0..7] do
-        for j in [0..7] do
-            match quadrant.Sectors.[i, j] with
-            | Enterprise e -> enterprise <- Some e
-            | _ -> ()
-
-    enterprise
 
 let shortRangeScan state = 
     let printCondition enterprise =
@@ -250,7 +239,7 @@ let shortRangeScan state =
         printf $"{enterprise.Condition}"
         Console.ForegroundColor <- cc
 
-    match getEnterprise state with
+    match state.Enterprise with
     | Some enterprise ->
         printfn $"SHORT RANGE SCAN FOR QUADRANT {(quadrantName state.CurrentQuadrant)}"
         printfn "   "
@@ -285,6 +274,7 @@ let shortRangeScan state =
     | _ -> state
 
 let changeQuadrant state newQuadrant : State =
+
     let clearSectors quadrant = 
         for i in [0..7] do
             for j in [0..7] do
@@ -303,15 +293,27 @@ let changeQuadrant state newQuadrant : State =
         TODO: Currently putting Enterprize into a new sector BUT I think it should be in the sector the user 
         has navigated to. This will is ok for the moment.
     *)
-    match getEnterprise state with
-    | Some e -> 
+    match state.Enterprise with
+    | Some enterprise -> 
         if quadrant.Klingons > 0 then
             printfn "COMBAT AREA **** CONDITION RED"
-            if (e.ShieldStrength < 200) then
+            if (enterprise.ShieldStrength < 200) then
                 printfn "SHIELDS DANGEROUSLY LOW"
-        quadrant.Sectors[fst sectorIndexs[0], snd sectorIndexs[0]] <- copyEnterprise { e with Condition = "*RED*"; SectorId =  sectorIndexs[cnt] }
+            quadrant.Sectors[fst sectorIndexs[0], snd sectorIndexs[0]] <- copyEnterprise { enterprise with Condition = "*RED*"; SectorId =  sectorIndexs[cnt] }
+        else
+            quadrant.Sectors[fst sectorIndexs[0], snd sectorIndexs[0]] <- copyEnterprise { enterprise with SectorId =  sectorIndexs[cnt]; Condition = "GREEN" }
+
     | None -> 
-        quadrant.Sectors[fst sectorIndexs[0], snd sectorIndexs[0]] <- createEnterprise (fst sectorIndexs[cnt], snd sectorIndexs[cnt])
+        let newEnterprise = createEnterprise (fst sectorIndexs[cnt], snd sectorIndexs[cnt])
+        if quadrant.Klingons > 0 then
+            printfn "COMBAT AREA **** CONDITION RED"
+            printfn "SHIELDS DANGEROUSLY LOW"
+            match newEnterprise with
+            | Enterprise e -> quadrant.Sectors[fst sectorIndexs[0], snd sectorIndexs[0]] <- copyEnterprise { e with Condition = "*RED*"; }
+            | _ -> ()
+
+        else
+            quadrant.Sectors[fst sectorIndexs[0], snd sectorIndexs[0]] <- newEnterprise
             
     cnt <- cnt + 1
 
@@ -341,7 +343,11 @@ let changeQuadrant state newQuadrant : State =
         cnt <- cnt + 1
     )
 
-    { state with CurrentSector = sectorIndexs[0]; CurrentQuadrant = newQuadrant;  }
+    { state with 
+        CurrentSector = sectorIndexs[0]; 
+        CurrentQuadrant = newQuadrant;  
+        Enterprise = match quadrant.Sectors[fst sectorIndexs[0], snd sectorIndexs[0]] with | Enterprise e -> Some e | _ -> None
+        }
 
 
 
@@ -504,7 +510,7 @@ let getWarp state : int option =
     else
         if warpFactor > 0 && warpFactor <= 8 then
             let n = int (warpFactor * 8.0 + 0.5)
-            match getEnterprise state with
+            match state.Enterprise with
             | Some enterprise ->
                 if enterprise.Energy - n >= 0 then
                     Some n
@@ -539,10 +545,6 @@ let navigateQuadrant state x y : State =
         
         changeQuadrant state newQuadrant
 
-
-
-
-
 let navigateSector state course  : State =
     let x1 = state.DirectionArray[course,0]
     let x2 = state.DirectionArray[course,1]
@@ -550,9 +552,8 @@ let navigateSector state course  : State =
     let dockedWithStarbase state quadrant sector =
         (* we have docked with starbase, update Energy, Torpedoes & ShieldEnergy to reflect this *)
         printfn " SHIELDS DROPPED FOR DOCKING PURPOSES"
-        let enterprise = getEnterprise state
            
-        match getEnterprise state with
+        match state.Enterprise with
         | Some enterprise ->
             for i in [0..7] do
                 for j in [0..7] do
@@ -564,26 +565,32 @@ let navigateSector state course  : State =
                     | _ -> ()
 
                     if i = fst state.CurrentSector + x1 && j = snd state.CurrentSector + x2 then
-                        quadrant.Sectors[i, j] <- copyEnterprise { enterprise with Energy = initialEnergy; ShieldStrength = initialShieldStrength; Torpedoes = initialTorpedoes; Condition = "DOCKED" }
+                        quadrant.Sectors[i, j] <- copyEnterprise { enterprise with 
+                                                                    Energy = initialEnergy; 
+                                                                    ShieldStrength = initialShieldStrength; 
+                                                                    Torpedoes = initialTorpedoes; 
+                                                                    Condition = "DOCKED";
+                                                                    SectorId = (i,j)
+                                                                    }
         | _ -> ()
 
         { state with CurrentSector = (fst state.CurrentSector + x1, snd state.CurrentSector + x2); }
 
     let moveEnterprise state quadrant =
-       match getEnterprise state with
+       match state.Enterprise with
        | Some enterprise ->
             for i in [0..7] do
                 for j in [0..7] do
-                    match quadrant.Sectors.[i, j] with
+                    match quadrant.Sectors[i, j] with
                     | Enterprise _ -> 
-                        quadrant.Sectors.[i, j] <- createEmptySpace (i, j)
+                        quadrant.Sectors[i, j] <- createEmptySpace (i, j)
                     | _ -> ()
 
                     if i = fst state.CurrentSector + x1 && j = snd state.CurrentSector + x2 then
-                        quadrant.Sectors.[i, j] <- copyEnterprise enterprise
+                        quadrant.Sectors[i, j] <- copyEnterprise { enterprise with SectorId = (i,j)}
        | _ -> ()
 
-       { state with CurrentSector = (fst state.CurrentSector + x1, snd state.CurrentSector + x2); }
+       { state with CurrentSector = (fst state.CurrentSector + x1, snd state.CurrentSector + x2) }
 
     if fst state.CurrentSector + x1 < 0 || fst state.CurrentSector + x1 > 7 || snd state.CurrentSector + x2 < 0 || snd state.CurrentSector + x2 > 7 then
         navigateQuadrant state x1 x2
@@ -599,7 +606,9 @@ let navigateSector state course  : State =
             printfn $"WARP ENGINES SHUT DOWN AT SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1} DUE TO BAD NAVIGATION"
             { state with Error = true }
         | Starbase s ->  dockedWithStarbase state quadrant sector
-        | _ -> moveEnterprise state quadrant
+        | _ ->  let s1 = moveEnterprise state quadrant 
+                s1
+                
 
 let navigate state =
     let course = getCourse()
@@ -648,7 +657,7 @@ let firePhasers (state : State) =
     let getPhaserUnits =
         let mutable ok = false
         let mutable noOfUnits = 0.0
-        let energy = match getEnterprise state with | Some e -> e.Energy | _ -> 0
+        let energy = match state.Enterprise with | Some e -> e.Energy | _ -> 0
 
         while not ok do
             printfn $"ENERGY AVAILABLE = {energy} UNITS"
@@ -791,7 +800,7 @@ let mainLoop() =
         inputString "COMMAND ? "
 
     let mutable state = startGame createState
-    shortRangeScan state |> ignore
+    state <- shortRangeScan state
     let mutable isOk = true
     
     while isOk do

@@ -102,6 +102,7 @@ type DistanceCoordinates = {
 
 type State = {
     Galaxy : Galaxy option
+    Enterprise : Enterprise option
     StarDate : int
     NumberOfStarDays : int
     CurrentQuadrant : QuadrantId
