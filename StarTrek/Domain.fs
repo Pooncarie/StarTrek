@@ -13,6 +13,7 @@ let initialShieldStrength = 0
 let initialTorpedoes = 10
 let initialKlingonShieldStrength = int (200.0 * (0.5 + rnd.NextDouble())); 
 let initialStardate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
+let fnr = int (rnd.NextDouble() * 7.98 + 1.01)
 
 type SectorId = int * int
 type QuadrantId = int * int
@@ -30,12 +31,14 @@ type Enterprise = {
     Energy : int
     ShieldStrength : int
     Torpedoes : int
-    EngineDamage : int                  // D(1)
-    SRS_Damage : int                    // D(2)
-    LRS_Damage : int                    // D(3)
-    PhasersDamage : int                 // D(4) 
-    DeflectorDamage : int               // D(7)
-    ComputerDamage : int                // D(8)
+    WarpEngines : int                   // D(1)
+    ShortRangeSensors : int             // D(2)
+    LongRangeSensors : int              // D(3)
+    PhaserControl : int                 // D(4) 
+    PhotonTubes : int                   // D(5)
+    DamageControl : int                 // D(6)
+    ShieldControl : int                 // D(7)
+    LibraryComputer : int               // D(8)
 }
 
 type Star = {
@@ -74,12 +77,14 @@ let createEnterprise sectorId : Enterprise = {
     Energy = initialEnergy;
     ShieldStrength = initialShieldStrength;
     Torpedoes = initialTorpedoes
-    EngineDamage = 0
-    SRS_Damage = 0
-    LRS_Damage = 0
-    PhasersDamage = 0
-    DeflectorDamage = 0
-    ComputerDamage = 0
+    WarpEngines = 0
+    ShortRangeSensors = 0
+    LongRangeSensors = 0
+    PhaserControl = 0
+    ShieldControl = 0
+    PhotonTubes = 0
+    LibraryComputer = 0
+    DamageControl = 0
     }
 
 let copyEnterprise (enterprise : Enterprise)  = Enterprise { 
@@ -89,12 +94,14 @@ let copyEnterprise (enterprise : Enterprise)  = Enterprise {
     Energy = enterprise.Energy;
     ShieldStrength = enterprise.ShieldStrength
     Torpedoes = enterprise.Torpedoes
-    EngineDamage = enterprise.EngineDamage
-    SRS_Damage = enterprise.SRS_Damage
-    LRS_Damage = enterprise.LRS_Damage
-    DeflectorDamage = enterprise.DeflectorDamage
-    ComputerDamage = enterprise.ComputerDamage
-    PhasersDamage = enterprise.PhasersDamage
+    WarpEngines = enterprise.WarpEngines
+    ShortRangeSensors = enterprise.ShortRangeSensors
+    LongRangeSensors = enterprise.LongRangeSensors
+    ShieldControl = enterprise.ShieldControl
+    LibraryComputer = enterprise.LibraryComputer
+    PhaserControl = enterprise.PhaserControl
+    PhotonTubes = enterprise.PhotonTubes
+    DamageControl = enterprise.DamageControl
     }
 
 let createStar sectorId = Star { 

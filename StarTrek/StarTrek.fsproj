@@ -9,6 +9,8 @@
     <Content Include="QuadrantMap.txt" />
     <None Include="st.bas" />
     <Compile Include="Domain.fs" />
+    <Compile Include="QuadrantNames.fs" />
+    <Compile Include="Input.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

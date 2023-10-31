@@ -25,56 +25,13 @@
 
 open System
 open Domain
-
-let readLine() = Console.ReadLine().Trim().ToUpper();
+open QuadrantNames
+open Input
 
 let square x = x * x
 
 let currentQuadrant (state : State) = state.Galaxy.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant]
 
-let inputInteger (prompt : string) =
-    printf $"{prompt}"
-    let str = readLine()
-    let mutable num = 0
-
-    if Int32.TryParse(str, &num) then
-        num
-    else
-        0
-
-let inputDouble (prompt : string) =
-    printf $"{prompt}"
-    let str = readLine()
-    let mutable num = 0.0
-
-    if Double.TryParse(str, &num) then
-        num
-    else
-        0
-
-let inputString (prompt : string) =
-    printf $"{prompt}"
-    readLine()
-
-let inputCoordinate (prompt : string) =
-    printf $"{prompt}"
-    let str = readLine()
-    let mutable numX = 0
-    let mutable numY = 0
-    let bits = str.Split(',')
-
-    if bits.Length <> 2 then
-        (0, 0)
-    else
-        let x = bits.[0].Trim()
-        let y = bits.[1].Trim()
-        if Int32.TryParse(x, &numX) then
-            if Int32.TryParse(y, &numY) then
-                (numX, numY)
-            else
-                (0, 0)
-        else
-            (0, 0)
 
 let quadrantCreate x y =
 
@@ -148,55 +105,6 @@ let createState =
     { s with TotalKlingons = totalKlingons; TotalStarbases = totalStarbases; TotalStars = totalStars;  }
 
 
-let quadrantName quadrant =
-        let partNames = [" I"; " II"; " III"; " IV";]
-
-        if (snd quadrant) < 4 then
-            match fst quadrant with
-            | 0 -> "ANTARES" + partNames.[snd quadrant % 4]
-            | 1 -> "RIGEL" + partNames.[snd quadrant % 4]
-            | 2 -> "PROCYON" + partNames.[snd quadrant % 4]
-            | 3 -> "VEGA" + partNames.[snd quadrant % 4]
-            | 4 -> "CANOPUS" + partNames.[snd quadrant % 4]
-            | 5 -> "ALTAIR" + partNames.[snd quadrant % 4]
-            | 6 -> "SAGITTARIUS" + partNames.[snd quadrant % 4]
-            | 7 -> "POLLUX" + partNames.[snd quadrant % 4]
-            | _ -> ""
-        else
-            match fst quadrant with
-            | 0 -> "SIRIUS" + partNames.[snd quadrant % 4]
-            | 1 -> "DENEB" + partNames.[snd quadrant % 4]
-            | 2 -> "CAPELLA" + partNames.[snd quadrant % 4]
-            | 3 -> "BETELGEUSE" + partNames.[snd quadrant % 4]
-            | 4 -> "ALDEBARAN" + partNames.[snd quadrant % 4]
-            | 5 -> "REGULUS" + partNames.[snd quadrant % 4]
-            | 6 -> "ARCTURUS" + partNames.[snd quadrant % 4]
-            | 7 -> "SPICA" + partNames.[snd quadrant % 4]
-            | _ -> ""
-
-let quadrantNameAlt quadrant =
-        if (snd quadrant) < 4 then
-            match fst quadrant with
-            | 0 -> "ANTARES    "
-            | 1 -> "RIGEL      "
-            | 2 -> "PROCYON    "
-            | 3 -> "VEGA       "
-            | 4 -> "CANOPUS    "
-            | 5 -> "ALTAIR     "
-            | 6 -> "SAGITTARIUS"
-            | 7 -> "POLLUX     "
-            | _ -> ""
-        else
-            match fst quadrant with
-            | 0 -> "SIRIUS     "
-            | 1 -> "DENEB      "
-            | 2 -> "CAPELLA    "
-            | 3 -> "BETELGEUSE "
-            | 4 -> "ALDEBARAN  "
-            | 5 -> "REGULUS    "
-            | 6 -> "ARCTURUS   "
-            | 7 -> "SPICA      "
-            | _ -> ""
 
 let start() =
     [0..10] |> List.iter(fun x -> printfn "")
@@ -298,11 +206,6 @@ let changeQuadrant state newQuadrant : State =
         quadrant.Sectors[fst sectorIndexs[0], snd sectorIndexs[0]] <- copyEnterprise { state.Enterprise with SectorId =  sectorIndexs[cnt]; Condition = "GREEN" }
 
     cnt <- cnt + 1
-
-    // TODO: THIS IS JUST FOR TESTING
-    //quadrant.Sectors.[fst sectorIndexs[cnt], snd sectorIndexs[cnt]] 
-    //        <- createStarbase  (fst sectorIndexs[cnt], snd sectorIndexs[cnt])
-    //cnt <- cnt + 1
 
     [0..quadrant.Klingons - 1] |> List.iter(fun x -> 
         let newKlingonSector = sectorIndexs[x + cnt]
@@ -477,14 +380,14 @@ let getWarp (state : State) : int option =
         printfn "";
 
     let warpRange = 
-        if state.Enterprise.EngineDamage < 0 then
+        if state.Enterprise.WarpEngines < 0 then
             "WARP FACTOR (0-0.2) "
         else
             "WARP FACTOR (0-8) "
 
     let warpFactor = inputDouble warpRange
 
-    if state.Enterprise.EngineDamage < 0 && warpFactor > 0.2 then
+    if state.Enterprise.WarpEngines < 0 && warpFactor > 0.2 then
         printfn "WARP ENGINES ARE DAMAGED.  MAXIUM SPEED = WARP 0.2"
         None
     else
@@ -496,7 +399,7 @@ let getWarp (state : State) : int option =
                 printfn "ENGINEERING REPORTS   'INSUFFICIENT ENERGY AVAILABLE"
                 printfn $"                     FOR MANEUVERING AT WARP {warpFactor}!'"
                
-                if state.Enterprise.ShieldStrength < n - state.Enterprise.Energy || state.Enterprise.DeflectorDamage < 0 then
+                if state.Enterprise.ShieldStrength < n - state.Enterprise.Energy || state.Enterprise.ShieldControl < 0 then
                     None
                 else
                     printfn $"DEFLECTOR CONTROL ROOM ACKNOWLEDGES  {state.Enterprise.ShieldStrength} UNITS OF ENERGY"
@@ -607,7 +510,7 @@ let longRangeScan (state : State) =
         else
             Some state.Galaxy.Quadrants.[fst qadrantId, snd qadrantId]
 
-    if state.Enterprise.LRS_Damage < 0 then
+    if state.Enterprise.LongRangeSensors < 0 then
         printfn "LONG RANGE SENSORS ARE INOPERABLE."
     else
         printfn $"LONG RANGE SCAN FOR QUADRANT {quadrantName state.CurrentQuadrant}"
@@ -624,6 +527,30 @@ let longRangeScan (state : State) =
 
     state
 
+let setDevice enterprise i value =
+    match i with
+    | 1 -> { enterprise with WarpEngines = value }
+    | 2 -> { enterprise with ShortRangeSensors = value }
+    | 3 -> { enterprise with LongRangeSensors = value }
+    | 4 -> { enterprise with ShieldControl = value }
+    | 5 -> { enterprise with LibraryComputer = value }
+    | 6 -> { enterprise with PhaserControl = value }
+    | 7 -> { enterprise with PhotonTubes = value }
+    | 8 -> { enterprise with DamageControl = value }
+    | _ -> enterprise
+
+let getDeviceName i =
+    match i with
+    | 1 -> "WARP ENGINES"
+    | 2 -> "SHORT RANGE SENSORS"
+    | 3 -> "LONG RANGE SENSORS"
+    | 4 -> "PHASER CONTROL"
+    | 5 -> "PHOTON TUBES"
+    | 6 -> "DAMAGE CONTROL"
+    | 7 -> "SHIELD CONTROL"
+    | 8 -> "LIBRARY COMPUTER"
+    | _ -> $"**** UNKOWN DEVICE{i} *****"
+
 let getCondition state =
     let quadrant = currentQuadrant state
     if state.Enterprise.Energy < initialEnergy / 10 then
@@ -632,6 +559,41 @@ let getCondition state =
         "*RED*"
     else
         "GREEN"
+
+(* LINE 6000 *)
+let klingonsShooting state =
+    let quadrant = currentQuadrant state 
+    let mutable shieldUnits = state.Enterprise.ShieldStrength
+    let mutable enterprise = state.Enterprise
+
+    if quadrant.Klingons > 0 then
+        if state.Enterprise.ShieldStrength <= 0 then
+
+            for i in sectorRange do
+                for j in sectorRange do
+                    match quadrant.Sectors[i, j] with
+                    | Klingon k -> 
+                        let distance = sqrt (double ((square (fst k.SectorId - fst state.CurrentSector)) + (square (snd k.SectorId - snd state.CurrentSector))))
+                        let tmp = distance * (rnd.NextDouble() + 2.0)
+                        let h = double k.ShieldStrength / tmp
+                        shieldUnits <- shieldUnits - int h
+                        quadrant.Sectors[i, j] <- copyKlingon { k with ShieldStrength = int (double k.ShieldStrength / 3.0 * rnd.NextDouble()) }
+                        printfn $"{h} UNIT HIT ON ENTERPRISE FROM SECTOR {fst k.SectorId},{snd k.SectorId}"
+                        if shieldUnits > 0 then
+                            printfn $"   <SHIELDS DOWN TO {shieldUnits} UNITS>"
+                            if h > 20 then
+                                if rnd.NextDouble() > 0.6 || h / double shieldUnits <= 0.02 then
+                                    ()
+                                else
+                                    let r1 = fnr
+                                    let v = int (h / double shieldUnits - 0.5 * rnd.NextDouble())
+                                    enterprise <- setDevice state.Enterprise r1 v
+                                    printfn  $"DAMAGE CONTROL REPORTS {getDeviceName r1} DAMAGED BY THE HIT'"
+                    | _ -> ()
+        else
+            printf "STARBASE SHIELDS PROTECT THE ENTERPRISE"
+        
+    { state with Enterprise = { enterprise with ShieldStrength = shieldUnits; Condition = getCondition state } }
 
 let firePhasers (state : State) =
     let getPhaserUnits =
@@ -652,7 +614,7 @@ let firePhasers (state : State) =
     let mutable klingonsDestroyed = 0
     let mutable energyUsed = 0.0
 
-    if state.Enterprise.PhasersDamage < 0 then
+    if state.Enterprise.PhaserControl < 0 then
         printfn "PHASER CONTROL IS INOPERABLE."
     else
         let klingons = getKlingons state
@@ -662,7 +624,7 @@ let firePhasers (state : State) =
             printfn "SCIENCE OFFICER SPOCK REPORTS  'SENSORS SHOW NO ENEMY SHIPS"
             printfn "                                IN THIS QUADRANT'"
         else 
-            if state.Enterprise.ComputerDamage < 0 then
+            if state.Enterprise.LibraryComputer < 0 then
                 printfn "COMPUTER FAILURE HAMPERS ACCURACY"
 
             printfn "PHASERS LOCKED ON TARGET;  "
@@ -670,11 +632,11 @@ let firePhasers (state : State) =
                
             energyUsed <- getPhaserUnits
 
-            if state.Enterprise.DeflectorDamage < 0 then
+            if state.Enterprise.ShieldControl < 0 then
                 energyUsed <-  energyUsed * rnd.NextDouble() / double klingons.Length
 
             let h1 = energyUsed / double klingons.Length
-            let quadrant = state.Galaxy.Quadrants[fst state.CurrentQuadrant, snd state.CurrentQuadrant];
+            let quadrant = currentQuadrant state 
 
             for i in sectorRange do
                 for j in sectorRange do
@@ -690,19 +652,19 @@ let firePhasers (state : State) =
                             if k.ShieldStrength - int h < 0 then
                                 printfn "**** KLINGON DESTROYED ****"
                                 quadrant.Sectors[i, j]  <- createEmptySpace (i, j)
-                                state.Galaxy.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant] <- { quadrant with Klingons = quadrant.Klingons - 1 }
+                                state.Galaxy.Quadrants[fst state.CurrentQuadrant, snd state.CurrentQuadrant] <- { quadrant with Klingons = quadrant.Klingons - 1 }
                                 klingonsDestroyed <- klingonsDestroyed + 1
                             else
                                 printfn $"   (SENSORS SHOW {k.ShieldStrength} UNITS REMAINING)"
                                 quadrant.Sectors[i, j]  <- copyKlingon { k with ShieldStrength = k.ShieldStrength - int h }
                     | _ -> ()
 
-    shortRangeScan { state with 
-                        TotalKlingons = (state.TotalKlingons - klingonsDestroyed); 
-                        Enterprise = { 
-                            state.Enterprise with Energy = state.Enterprise.Energy - int energyUsed; Condition = getCondition state 
-                        } 
-                    }
+    shortRangeScan (klingonsShooting { state with 
+                                        TotalKlingons = (state.TotalKlingons - klingonsDestroyed); 
+                                        Enterprise = { 
+                                            state.Enterprise with Energy = state.Enterprise.Energy - int energyUsed; Condition = getCondition state 
+                                        } 
+                                    })
             
 
 let tor state =
