@@ -85,7 +85,7 @@ let createState =
         TotalKlingons = 0
         TotalStarbases = 0
         TotalStars = 0
-        DirectionArray = Array2D.init 8 2 (fun i j -> arrayOfMove[i][j])
+        DirectionArray = Array2D.init 9 2 (fun i j -> arrayOfMove[i][j])
         StartAgain = false;
         Error = false;
         }
@@ -250,7 +250,6 @@ let startGame (state : State) =
     newState
 
 
-(* Show all the quadrant names, mostly for debugging purposes. *)
 let galaxyMap state  = 
     printfn $"CURRENT QUADRANT {(quadrantName state.CurrentQuadrant)}"
     printfn "+-I-----------+-II----------+-III---------+-IV----------+-I-----------+-II----------+-III---------+-IV----------+"
@@ -359,19 +358,21 @@ let computerStarbaseData state =
 
     state
 
-let getCourse() : int option =
+let getCourse() : double option =
     let courseError() =
         printfn ""
         printfn "   LT. SULU REPORTS, 'INCORRECT COURSE DATA, SIR!'"
         printfn ""
 
-    let course = (inputInteger "COURSE (0-8) ") - 1
-
-    if course < 0 || course > 7 then
+    let mutable course = (inputDouble "COURSE (1-9) ")
+    if course >= 8.5 then
+        course <- 1.0
+    
+    if course < 1 || course > 8.999 then
         courseError()
         None
     else
-        Some course 
+        Some (course - 1.0)
 
 let getWarp (state : State) : int option =
     let warpError warpSpeed =
@@ -425,9 +426,13 @@ let navigateQuadrant state x y : State =
         
         changeQuadrant state newQuadrant
 
-let navigateSector state course  : State =
-    let x1 = state.DirectionArray[course,0]
-    let x2 = state.DirectionArray[course,1]
+let getDecimalPart (num : double) = num - Math.Truncate(num)
+
+let navigateSector state (course : double) : State =
+    let icourse = int (Math.Round course)
+
+    let x1 = int (double state.DirectionArray[icourse,0] + double (state.DirectionArray[icourse + 1,0] - state.DirectionArray[icourse, 0]) * getDecimalPart course)
+    let x2 = int (double state.DirectionArray[icourse,1] + double (state.DirectionArray[icourse + 1,1] - state.DirectionArray[icourse, 1]) * getDecimalPart course)
 
     let dockedWithStarbase state quadrant sector =
         (* we have docked with starbase, update Energy, Torpedoes & ShieldEnergy to reflect this *)
@@ -442,7 +447,7 @@ let navigateSector state course  : State =
                     quadrant.Sectors.[i, j] <- createEmptySpace (i, j)
                 | _ -> ()
 
-                if i = fst state.CurrentSector + x1 && j = snd state.CurrentSector + x2 then
+                if i = fst state.CurrentSector + x1 && j = snd state.CurrentSector +  x2 then
                     quadrant.Sectors[i, j] <- copyEnterprise { state.Enterprise with 
                                                                 Energy = initialEnergy; 
                                                                 ShieldStrength = initialShieldStrength; 
@@ -461,10 +466,10 @@ let navigateSector state course  : State =
                     quadrant.Sectors[i, j] <- createEmptySpace (i, j)
                 | _ -> ()
 
-                if i = fst state.CurrentSector + x1 && j = snd state.CurrentSector + x2 then
+                if i = fst state.CurrentSector + int x1 && j = snd state.CurrentSector + int x2 then
                     quadrant.Sectors[i, j] <- copyEnterprise { state.Enterprise with SectorId = (i,j)}
 
-        { state with CurrentSector = (fst state.CurrentSector + x1, snd state.CurrentSector + x2) }
+        { state with CurrentSector = (fst state.CurrentSector + int x1, snd state.CurrentSector + int x2) }
 
     if fst state.CurrentSector + x1 < 0 || fst state.CurrentSector + x1 >= maxSectors || snd state.CurrentSector + x2 < 0 || snd state.CurrentSector + x2 >= maxSectors then
         navigateQuadrant state x1 x2
@@ -666,9 +671,69 @@ let firePhasers (state : State) =
                                         } 
                                     })
             
+(* 4700 *)
+let photonTorpedoes state =
+    let getCourse() : double option =
+        let courseError() =
+            printfn ""
+            printfn "ENSIGN CHEKOV REPORTS, 'INCORRECT COURSE DATA, SIR!'"
+            printfn ""
 
-let tor state =
-    printfn "TOR"
+        let mutable course = (inputDouble "PHOTON TORPEDO COURSE (1-8) ")
+        if course >= 8.5 then
+            course <- 1.0
+    
+        if course < 1 || course > 8.999 then
+            courseError()
+            None
+        else
+            Some (course - 1.0)
+
+    let canUsePhotonTorpedoes state =
+        if state.Enterprise.Torpedoes > 0 then
+            if state.Enterprise.PhotonTubes >= 0 then
+                let course = getCourse() 
+                match course with
+                | Some c -> (true, c)
+                | None -> (false, 0)
+            else
+                printfn "PHOTON TUBES ARE NOT OPERATIONAL"
+                (false, 0)
+        else
+            printfn "ALL PHOTON TORPEDOES EXPENDED"        
+            (false, 0)
+
+    let (canFire, course) = canUsePhotonTorpedoes state
+
+    if canFire then
+        let icourse = int (Math.Round course)
+
+        let x1 = (double state.DirectionArray[icourse,0] + double (state.DirectionArray[icourse + 1,0] - state.DirectionArray[icourse, 0]) * getDecimalPart course)
+        let x2 = (double state.DirectionArray[icourse,1] + double (state.DirectionArray[icourse + 1,1] - state.DirectionArray[icourse, 1]) * getDecimalPart course)
+
+        let mutable x = double (fst state.Enterprise.SectorId)
+        let mutable y = double (snd state.Enterprise.SectorId)
+
+        printfn "TORPEDO TRACK:"
+        let mutable flag = true
+
+        while flag do
+            x <- x + x1
+            y <- y + x2
+            let x3 = int (x + 0.5)
+            let y3 = int (y + 0.5)
+        
+            if x3 < 0 || x3 > 7 || y3 < 0 || y3 > 7 then
+                printfn "TORPEDO MISSED"
+                flag <- false
+            else
+               printfn $"               {x3},{y3}"
+               let quadrant = currentQuadrant state
+               let sector = quadrant.Sectors.[x3 - 1, y3 - 1]
+               match sector with
+               | EmptySpace e -> flag <- true
+               | _ -> flag <- false
+
     state
 
 let she state =
@@ -780,7 +845,7 @@ let mainLoop() =
                  | "SRS" -> shortRangeScan state
                  | "LRS" -> longRangeScan state
                  | "PHA" -> firePhasers state
-                 | "TOR" -> tor state
+                 | "TOR" -> photonTorpedoes state
                  | "SHE" -> she state
                  | "DAM" -> dam state
                  | "COM" -> computer state
