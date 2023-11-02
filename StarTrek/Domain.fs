@@ -14,6 +14,8 @@ let initialTorpedoes = 10
 let initialKlingonShieldStrength = int (200.0 * (0.5 + rnd.NextDouble())); 
 let initialStardate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
 let fnr = int (rnd.NextDouble() * 7.98 + 1.01)
+let square (x : double) = x * x
+
 
 type SectorId = int * int
 type QuadrantId = int * int
@@ -29,16 +31,17 @@ type Enterprise = {
     Condition : string
     Symbol : string
     Energy : int
-    ShieldStrength : int
+    ShieldEnergy : int
     Torpedoes : int
-    WarpEngines : int                   // D(1)
-    ShortRangeSensors : int             // D(2)
-    LongRangeSensors : int              // D(3)
-    PhaserControl : int                 // D(4) 
-    PhotonTubes : int                   // D(5)
-    DamageControl : int                 // D(6)
-    ShieldControl : int                 // D(7)
-    LibraryComputer : int               // D(8)
+    WarpEngines : double                   // D(1)
+    ShortRangeSensors : double             // D(2)
+    LongRangeSensors : double              // D(3)
+    PhaserControl : double                 // D(4) 
+    PhotonTubes : double                   // D(5)
+    DamageControl : double                 // D(6)
+    ShieldControl : double                 // D(7)
+    LibraryComputer : double               // D(8)
+    IsDocked : bool
 }
 
 type Star = {
@@ -75,7 +78,7 @@ let createEnterprise sectorId : Enterprise = {
     Symbol = "<E>"; 
     Condition = "GREEN" ; 
     Energy = initialEnergy;
-    ShieldStrength = initialShieldStrength;
+    ShieldEnergy = initialShieldStrength;
     Torpedoes = initialTorpedoes
     WarpEngines = 0
     ShortRangeSensors = 0
@@ -85,6 +88,7 @@ let createEnterprise sectorId : Enterprise = {
     PhotonTubes = 0
     LibraryComputer = 0
     DamageControl = 0
+    IsDocked = false
     }
 
 let copyEnterprise (enterprise : Enterprise)  = Enterprise { 
@@ -92,7 +96,7 @@ let copyEnterprise (enterprise : Enterprise)  = Enterprise {
     Symbol = "<E>"; 
     Condition = enterprise.Condition; 
     Energy = enterprise.Energy;
-    ShieldStrength = enterprise.ShieldStrength
+    ShieldEnergy = enterprise.ShieldEnergy
     Torpedoes = enterprise.Torpedoes
     WarpEngines = enterprise.WarpEngines
     ShortRangeSensors = enterprise.ShortRangeSensors
@@ -102,6 +106,7 @@ let copyEnterprise (enterprise : Enterprise)  = Enterprise {
     PhaserControl = enterprise.PhaserControl
     PhotonTubes = enterprise.PhotonTubes
     DamageControl = enterprise.DamageControl
+    IsDocked = enterprise.IsDocked
     }
 
 let createStar sectorId = Star { 
@@ -132,10 +137,10 @@ type Galaxy = {
     }
 
 type DistanceCoordinates = {
-    InitialX : int
-    InitialY : int
-    FinalX : int
-    FinalY : int
+    InitialX : double
+    InitialY : double
+    FinalX : double
+    FinalY : double
     }
 
 type State = {
@@ -154,3 +159,26 @@ type State = {
     }
 
 
+let currentQuadrant (state : State) = state.Galaxy.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant]
+
+let getKlingons state =
+    let mutable klingons = []
+    let quadrant = currentQuadrant state
+
+    for i in sectorRange do
+        for j in sectorRange do
+            match quadrant.Sectors[i, j] with
+            | Klingon k -> klingons <- k :: klingons
+            | _ -> ()
+    klingons
+
+let getStarbases state = 
+    let mutable starbases = []
+    let quadrant = currentQuadrant state
+
+    for i in sectorRange do
+        for j in sectorRange do
+            match quadrant.Sectors.[i, j] with
+            | Starbase s -> starbases <- s :: starbases
+            | _ -> ()
+    starbases

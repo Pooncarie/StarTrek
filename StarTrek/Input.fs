@@ -31,19 +31,19 @@ let inputString (prompt : string) =
 let inputCoordinate (prompt : string) =
     printf $"{prompt}"
     let str = readLine()
-    let mutable numX = 0
-    let mutable numY = 0
+    let mutable numX = 0.0
+    let mutable numY = 0.0
     let bits = str.Split(',')
 
     if bits.Length <> 2 then
-        (0, 0)
+        (0.0, 0.0)
     else
         let x = bits.[0].Trim()
         let y = bits.[1].Trim()
-        if Int32.TryParse(x, &numX) then
-            if Int32.TryParse(y, &numY) then
+        if Double.TryParse(x, &numX) then
+            if Double.TryParse(y, &numY) then
                 (numX, numY)
             else
-                (0, 0)
+                (0.0, 0.0)
         else
-            (0, 0)
+            (0.0, 0.0)
