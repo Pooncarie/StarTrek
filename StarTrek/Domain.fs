@@ -16,7 +16,6 @@ let initialStardate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
 let fnr = int (rnd.NextDouble() * 7.98 + 1.01)
 let square (x : double) = x * x
 
-
 type SectorId = int * int
 type QuadrantId = int * int
 
@@ -146,8 +145,9 @@ type DistanceCoordinates = {
 type State = {
     Galaxy : Galaxy
     Enterprise : Enterprise
-    StarDate : int
-    NumberOfStarDays : int
+    StarDate : int              // T
+    NumberOfStarDays : int      // T9
+    StartedOnStardate : int     // T0
     CurrentQuadrant : QuadrantId
     CurrentSector : SectorId
     TotalKlingons : int
@@ -159,7 +159,7 @@ type State = {
     }
 
 
-let currentQuadrant (state : State) = state.Galaxy.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant]
+let currentQuadrant state = state.Galaxy.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant]
 
 let getKlingons state =
     let mutable klingons = []

@@ -26,7 +26,7 @@ let private distanceCalculator coords =
 let private computerStatusReport state =
     printfn "STATUS REPORT:"
     printfn $"    KLINGONS LEFT: {state.TotalKlingons}"
-    printfn $"    MISSION MUST BE COMPLETED IN {state.NumberOfStarDays} STARDATES"
+    printfn $"    MISSION MUST BE COMPLETED IN {state.NumberOfStarDays - (state.StarDate - state.StartedOnStardate)} DAYS"
     if state.TotalStarbases > 0 then
         printfn $"    THE FEDERATION IS MAINTAINING {state.TotalStarbases} STARBASES IN THE GALAXY"
     else
