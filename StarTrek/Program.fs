@@ -29,80 +29,6 @@ open QuadrantNames
 open Input
 open Computer
 
-let quadrantCreate x y =
-
-    let klingonCount =
-        match rnd.NextDouble() with
-            | x when x > 0.98 -> 3
-            | x when x > 0.95 -> 2
-            | x when x > 0.80 -> 1
-            | _ -> 0
-
-    let starBaseCount =
-        match rnd.NextDouble() with
-            | x when x > 0.96 -> 1
-            | _ -> 0
-
-    let starCount =
-        int  (rnd.NextDouble() * 7.98 + 1.01)
-
-    let quadrant = { 
-        Starbases = starBaseCount
-        Stars = starCount
-        Klingons = klingonCount
-        QuadrantId = (x, y)
-        Sectors = Array2D.init maxSectors maxSectors (fun i j -> createEmptySpace (i, j))
-    }
-
-    quadrant
-
-let createState = 
-    let createGalaxy = { Quadrants = Array2D.init maxQuadrants maxQuadrants (fun i j -> quadrantCreate i j) }
-
-    let arrayOfMove = [|
-        [| 0; 1|]
-        [| -1; 1|]
-        [| -1; 0|]
-        [| -1; -1|]
-        [| 0; -1|]
-        [| 1; -1|]
-        [| 1; 0|]
-        [| 1; 1|]
-        [| 0; 1|]
-        |]
-
-    let tmpStarDate = initialStardate
-
-    let s = {
-        Galaxy = createGalaxy
-        Enterprise = createEnterprise (0,0) 
-        StarDate = tmpStarDate
-        StartedOnStardate = tmpStarDate
-        NumberOfStarDays = 25 + (int) (rnd.NextDouble() * 10.0)
-        CurrentQuadrant = QuadrantId(0, 0)
-        CurrentSector = SectorId(0,0)
-        TotalKlingons = 0
-        TotalStarbases = 0
-        TotalStars = 0
-        DirectionArray = Array2D.init 9 2 (fun i j -> arrayOfMove[i][j])
-        StartAgain = false;
-        Error = false;
-        }
-
-    let mutable totalStarbases = 0
-    let mutable totalKlingons = 0
-    let mutable totalStars = 0
-
-
-    for i in quadrantRange do
-        for j in quadrantRange do
-            let quadrant = s.Galaxy.Quadrants[i, j]
-            totalStarbases <- totalStarbases + quadrant.Starbases
-            totalKlingons <- totalKlingons + quadrant.Klingons
-            totalStars <- totalStars + quadrant.Stars
-
-    { s with TotalKlingons = totalKlingons; TotalStarbases = totalStarbases; TotalStars = totalStars;  }
-
 let start() =
     [0..10] |> List.iter(fun x -> printfn "")
     printfn "                                    ,------*------,"
@@ -113,62 +39,101 @@ let start() =
     printfn "                    THE USS ENTERPRISE --- NCC-1701"
     printfn ""
     printfn ""
-    
-let printSector state line =
 
-    let printIt (s : Sector)  =
-        match s with
-        | Klingon k -> printf $" {k.Symbol}"
-        | Enterprise e -> printf $" {e.Symbol}"
-        | Star s -> printf $" {s.Symbol}"
-        | Starbase s -> printf $" {s.Symbol}"
-        | EmptySpace e -> printf $" {e.Symbol}"
+let endOfGame state reason =
+    printfn $"IT IS STARDATE {state.StarDate + state.NumberOfStarDays}."
 
-    let sector = (currentQuadrant state).Sectors;
+    match reason with
+    | Destroyed -> 
+        printfn "THE ENTERPRISE HAS BEEN DESTROYED. THEN FEDERATION "
+        printfn "WILL BE CONQUERED"
+        printfn $"IT IS STARDATE {state.StarDate + state.NumberOfStarDays}"
+    | Won ->
+        printfn "CONGRATULATIONS, CAPTAIN! THE LAST KLINGON BATTLE CRUISER"
+        printfn "MENACING THE FEDERATION HAS BEEN DESTROYED."
+        printfn ""
+        printfn $"YOUR EFFICIENCY RATING IS {state.NumberOfStarDays - state.StarDate}."
+    | Quit ->
+        printfn $"THERE WERE {state.TotalKlingons} KLINGON BATTLE CRUISERS LEFT AT"
+        printfn "THE END OF YOUR MISSION."
+    | TooLong ->
+        printfn "YOU HAVE EXCEEDED YOUR ALLOWED DAYS"
+        printfn "THE FEDERATION WILL BE CONQUERED."
+    | NoEnergy ->
+        printfn "YOU DO NOT HAVE THE ENERGY TO COMBAT THE KLINGONS."
+        printfn "THE FEDERATION WILL BE CONQUERED."
+    | FatalError ->
+        printfn " ** FATAL ERROR **   YOU'VE JUST STRANDED YOUR SHIP IN SPACE"
+        printfn "YOU HAVE INSUFFICIENT MANEUVERING ENERGY, AND SHIELD CONTROL"
+        printfn "IS PRESENTLY INCAPABLE OF CROSS-CIRCUITING TO ENGINE ROOM!!"
 
-    for i in sectorRange do 
-       printIt(sector[line, i])
-    done
+    | _ -> printfn "UNKNOWN ENDING"
 
+
+    Environment.Exit(0)
+
+    state
+
+let checkForFatalErrors state =
+    if state.Enterprise.ShieldEnergy + state.Enterprise.Energy <= 10 then
+        if state.Enterprise.Energy < 10 ||state.Enterprise.ShieldControl < 0 then
+            endOfGame state Endings.FatalError |> ignore
+    ()
+  
 let shortRangeScan state = 
+    let printSector (sectors : Sector array2d) line =
+
+        let printIt (s : Sector)  =
+            match s with
+            | Klingon k -> printf $" {k.Symbol}"
+            | Enterprise e -> printf $" {e.Symbol}"
+            | Star s -> printf $" {s.Symbol}"
+            | Starbase s -> printf $" {s.Symbol}"
+            | EmptySpace e -> printf $" {e.Symbol}"
+
+        for i in sectorRange do 
+           printIt(sectors[line, i])
+        done
+
     let printCondition enterprise =
         let cc = Console.ForegroundColor
         match enterprise.Condition with
-        | "GREEN" -> Console.ForegroundColor <- ConsoleColor.Green; 
-        | "YELLOW" -> Console.ForegroundColor <- ConsoleColor.Yellow;
-        | "*RED*" -> Console.ForegroundColor <- ConsoleColor.Red;
-        | "DOCKED" -> Console.ForegroundColor <- ConsoleColor.Blue;
+        | Green -> Console.ForegroundColor <- ConsoleColor.Green; printf "GREEN"
+        | Yellow -> Console.ForegroundColor <- ConsoleColor.Yellow; printf "YELLOW"
+        | Red -> Console.ForegroundColor <- ConsoleColor.Red; printf "*RED*"
+        | Docked -> Console.ForegroundColor <- ConsoleColor.Blue; printf "DOCKED"
         | _ -> Console.ForegroundColor <- ConsoleColor.White;
-        printf $"{enterprise.Condition}"
         Console.ForegroundColor <- cc
+
+    let sectors = (currentQuadrant state).Sectors;
 
     printfn ""
     printfn $"SHORT RANGE SCAN FOR QUADRANT {(quadrantName state.CurrentQuadrant)}"
     printfn "   "
     printfn " +--1---2---3---4---5---6---7---8-+"
     printf "1|"
-    printSector state 0; printf "|1";
+    printSector sectors 0; printf "|1";
     printfn $"        STARDATE            {state.StarDate}"
     printf "2|"
-    printSector state 1; printf "|2";
+    printSector sectors 1; printf "|2";
     printf $"        CONDITION           "; printCondition state.Enterprise; printfn ""
     printf "3|"
-    printSector state 2; printf "|3";
+    printSector sectors 2; printf "|3";
     printfn $"        QUADRANT            {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
     printf "4|"
-    printSector state 3; printf "|4";
+    printSector sectors 3; printf "|4";
     printfn $"        SECTOR              {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
     printf "5|"
-    printSector state 4; printf "|5";
+    printSector sectors 4; printf "|5";
     printfn $"        PHOTO TORPEDOES     {state.Enterprise.Torpedoes}"
     printf "6|"
-    printSector state 5; printf "|6";
+    printSector sectors 5; printf "|6";
     printfn $"        TOTAL ENERGY        {state.Enterprise.Energy + state.Enterprise.ShieldEnergy}"
     printf "7|"
-    printSector state 6; printf "|7";
+    printSector sectors 6; printf "|7";
     printfn $"        SHIELDS             {state.Enterprise.ShieldEnergy}"
     printf "8|"
-    printSector state 7; printf "|8";
+    printSector sectors 7; printf "|8";
     printfn $"        KLINGONS REMAINING  {state.TotalKlingons}"
     printf " +--------------------------------+"
     printfn "   "
@@ -177,13 +142,18 @@ let shortRangeScan state =
 let changeQuadrant state newQuadrant =
 
     let clearSectors quadrant = 
-        for i in quadrantRange do
-            for j in quadrantRange do
+        for i in sectorRange do
+            for j in sectorRange do
                 match quadrant.Sectors[i, j] with
                 | EmptySpace _ -> ()
                 | _ -> quadrant.Sectors[i, j] <- createEmptySpace (i,j)
 
-    let randomSectorIndexs = Seq.initInfinite (fun _ -> (rnd.Next(0, maxSectors - 1), rnd.Next(0, maxSectors - 1))) |> Seq.distinct |> Seq.take(40) |> Seq.toArray
+    let randomSectorIndexs = 
+        Seq.initInfinite (fun _ -> (rnd.Next(0, maxSectors - 1), rnd.Next(0, maxSectors - 1))) 
+        |> Seq.distinct 
+        |> Seq.take(40) 
+        |> Seq.toArray
+
     let quadrant = state.Galaxy.Quadrants[fst newQuadrant, snd newQuadrant]
 
     clearSectors quadrant
@@ -197,18 +167,13 @@ let changeQuadrant state newQuadrant =
         if (state.Enterprise.ShieldEnergy < 200) then
             printfn "SHIELDS DANGEROUSLY LOW"
         quadrant.Sectors[fst randomSectorIndexs[0], snd randomSectorIndexs[0]] 
-            <- copyEnterprise { state.Enterprise with Condition = "*RED*"; SectorId =  randomSectorIndexs[cnt] }
+            <- copyEnterprise { state.Enterprise with Condition = Condition.Red; SectorId =  randomSectorIndexs[cnt] }
     else
         quadrant.Sectors[fst randomSectorIndexs[0], snd randomSectorIndexs[0]] 
-            <- copyEnterprise { state.Enterprise with SectorId =  randomSectorIndexs[cnt]; Condition = "GREEN" }
+            <- copyEnterprise { state.Enterprise with SectorId =  randomSectorIndexs[cnt]; Condition = Condition.Green }
 
     cnt <- cnt + 1
     
-    // TODO: THIS IS JUST FOR TESTING
-   // quadrant.Sectors.[fst sectorIndexs[cnt], snd sectorIndexs[cnt]]
-    //    <- createStarbase sectorIndexs[cnt]
-    //cnt <- cnt + 1
-
     [0..quadrant.Klingons - 1] |> List.iter(fun x -> 
         let newKlingonSector = randomSectorIndexs[x + cnt]
         quadrant.Sectors[fst newKlingonSector, snd newKlingonSector] 
@@ -245,10 +210,8 @@ let startGame state =
     printfn "   THE GALAXY BEFORE THEY CAN ATTACK FEDERATION HEADQUARTERS"
     printfn $"   ON STARDATE {state.StarDate + state.NumberOfStarDays}. THIS GIVES YOU {(state.NumberOfStarDays)} DAYS. THERE ARE {state.TotalStarbases}"   
     printfn "   STARBASES IN THE GALAXY FOR RESUPPLYING YOUR SHIP."
-    printfn ""
-    printfn ""
-    printfn "YOUR MISSION BEGINS WITH YOUR STARSHIP LOCATED"
-    printfn $"IN THE GALACTIC QUADRANT {(quadrantName newState.CurrentQuadrant)}"
+    printfn "   YOUR MISSION BEGINS WITH YOUR STARSHIP LOCATED"
+    printfn $"   IN THE GALACTIC QUADRANT {(quadrantName newState.CurrentQuadrant)}"
     newState
 
 let getCourse() : double option =
@@ -293,10 +256,11 @@ let getWarp (state : State) : (int * double) option =
                 printfn "ENGINEERING REPORTS 'INSUFFICIENT ENERGY AVAILABLE FOR MANEUVERING AT WARP {warpFactor}!'"
                
                 if state.Enterprise.ShieldEnergy < n - state.Enterprise.Energy || state.Enterprise.ShieldControl < 0 then
-                    None
-                else
-                    printfn $"DEFLECTOR CONTROL ROOM ACKNOWLEDGES {state.Enterprise.ShieldEnergy} UNITS OF ENERGY PRESENTLY DEPLOYED TO SHIELDS."
-                    None
+                    checkForFatalErrors state
+
+                printfn $"DEFLECTOR CONTROL ROOM ACKNOWLEDGES {state.Enterprise.ShieldEnergy} UNITS OF ENERGY PRESENTLY DEPLOYED TO SHIELDS."
+                checkForFatalErrors state
+                None
         else 
             if warpFactor = 0.0 then
                 None
@@ -357,21 +321,14 @@ let getDeviceName i =
 
 let getCondition state =
     let quadrant = currentQuadrant state
-    if state.Enterprise.Condition = "DOCKED" then
-        "DOCKED"
+    if state.Enterprise.Condition = Condition.Docked then
+       Condition.Docked
     else if state.Enterprise.Energy < initialEnergy / 10 then
-        "YELLOW"
+       Condition.Yellow
     else if quadrant.Klingons > 0 then
-        "*RED*"
+        Condition.Red
     else
-        "GREEN"
-
-let endOfGame state =
-    printfn ""
-    printfn "THE ENTERPRISE HAS BEEN DESTROYED.  THEN FEDERATION ";
-    printfn "WILL BE CONQUERED"
-    printfn $"IT IS STARDATE {state.StarDate + state.NumberOfStarDays}"
-    Environment.Exit(0)
+        Condition.Green
 
 (* LINE 6000 *)
 let klingonsShooting state =
@@ -407,7 +364,8 @@ let klingonsShooting state =
                                     enterprise <- setDevice state.Enterprise r1 -v
                                     printfn  $"DAMAGE CONTROL REPORTS '{getDeviceName r1} DAMAGED BY THE HIT'"
                         else
-                            endOfGame state
+                            endOfGame state Endings.NoEnergy |> ignore
+                            ()
 
                     | _ -> ()
         
@@ -427,7 +385,7 @@ let navigateSector state (course : double) : State =
                                                 Energy = initialEnergy; 
                                                 ShieldEnergy = initialShieldStrength; 
                                                 Torpedoes = initialTorpedoes; 
-                                                Condition = "DOCKED";
+                                                Condition = Condition.Docked;
                                                 SectorId = (fst state.CurrentSector + x1,snd state.CurrentSector + x2)
                                                 IsDocked = true
                                             }
@@ -448,9 +406,9 @@ let navigateSector state (course : double) : State =
     let moveEnterprise state quadrant =
         let newState = if state.Enterprise.IsDocked then
                         if quadrant.Klingons > 0 then
-                            { state with Enterprise = { state.Enterprise with IsDocked = false; Condition = "*RED*" } }
+                            { state with Enterprise = { state.Enterprise with IsDocked = false; Condition = Condition.Red } }
                         else
-                            { state with Enterprise = { state.Enterprise with IsDocked = false; Condition = "GREEN" } }
+                            { state with Enterprise = { state.Enterprise with IsDocked = false; Condition = Condition.Green } }
                        else
                             state
 
@@ -481,15 +439,38 @@ let navigateSector state (course : double) : State =
             { state with Error = true }
         | Starbase s ->  dockedWithStarbase state quadrant sector
         | _ -> moveEnterprise state quadrant
-
         
 let navigate state =
     let course = getCourse()
     
-    let klingonsMove state = state
+    let clearKlingonSectors quadrant = 
+        for i in sectorRange do
+            for j in sectorRange do
+                match quadrant.Sectors[i, j] with
+                | Klingon k -> quadrant.Sectors[i, j] <- createEmptySpace (i,j)
+                | _ -> ()
+
+    (* 2590 *)
+    let klingonsMove quadrant =
+        clearKlingonSectors quadrant
+        let randomSectorIndexs = 
+            Seq.initInfinite (fun _ -> (rnd.Next(0, maxSectors - 1), rnd.Next(0, maxSectors - 1))) 
+            |> Seq.distinct 
+            |> Seq.where(fun (x, y) -> match quadrant.Sectors[x, y] with | EmptySpace e -> true | _ -> false)
+            |> Seq.take(quadrant.Klingons) 
+            |> Seq.toArray
+
+        let mutable cnt = 0
+        [0..quadrant.Klingons - 1] |> List.iter(fun x -> 
+            let newKlingonSector = randomSectorIndexs[x + cnt]
+            quadrant.Sectors[fst newKlingonSector, snd newKlingonSector] 
+                <- createKlingon randomSectorIndexs[cnt]
+            cnt <- cnt + 1
+            )
 
     (* 2702 *)
     let klingonsFire state warpSpeed = 
+        currentQuadrant state |> klingonsMove 
         let newState = klingonsShooting state
         let mutable enterprise = newState.Enterprise
         let d6 = if warpSpeed >= 1 then 1 else warpSpeed
@@ -503,15 +484,15 @@ let navigate state =
                     printfn $"DAMAGE CONTROL REPORTS {getDeviceName i} REPAIRED"
         
         if rnd.NextDouble() <= 0.2 then
-            let r1 = fnr
+            let device = fnr
             if rnd.NextDouble() < 0.6 then
-                let v = getDevice enterprise r1
-                enterprise <- setDevice enterprise r1 (v - (rnd.NextDouble() * 5.0 + 1.0))
-                printfn $"DAMAGE CONTROL REPORT: {getDeviceName r1} DAMAGED"
+                let v = getDevice enterprise device
+                enterprise <- setDevice enterprise device (v - (rnd.NextDouble() * 5.0 + 1.0))
+                printfn $"DAMAGE CONTROL REPORT: {getDeviceName device} DAMAGED"
             else
-                let v = getDevice enterprise r1
-                enterprise <- setDevice enterprise r1 (v + (rnd.NextDouble() * 3.0 + 1.0))
-                printfn $"DAMAGE CONTROL REPORT: {getDeviceName r1} STATE OF REPAIR IMPROVED"
+                let v = getDevice enterprise device
+                enterprise <- setDevice enterprise device (v + (rnd.NextDouble() * 3.0 + 1.0))
+                printfn $"DAMAGE CONTROL REPORT: {getDeviceName device} STATE OF REPAIR IMPROVED"
                 printfn ""
 
         { newState with Enterprise = enterprise }
@@ -532,7 +513,8 @@ let navigate state =
             if warpFactor < 1 then
                 t8 <- int (10.0 * warpFactor) / 10
             s1 <- { s1 with StarDate = s1.StarDate + t8 }
-
+            if s1.StarDate > s1.StartedOnStardate + s1.NumberOfStarDays then 
+                s1 <- endOfGame s1 TooLong
             for i = 0 to (int warpSpeed) - 1 do
                 if s1.Error = false then
                     s1 <- navigateSector s1 course
@@ -594,8 +576,7 @@ let firePhasers state =
                 printfn "COMPUTER FAILURE HAMPERS ACCURACY"
 
             printfn "PHASERS LOCKED ON TARGET;  "
-          
-               
+                        
             energyUsed <- getPhaserUnits
 
             if state.Enterprise.ShieldControl < 0 then
@@ -621,12 +602,13 @@ let firePhasers state =
                             if k.ShieldStrength - int h < 0 then
                                 printfn "**** KLINGON DESTROYED ****"
                                 quadrant.Sectors[i, j]  <- createEmptySpace (i, j)
-                                state.Galaxy.Quadrants[fst state.CurrentQuadrant, snd state.CurrentQuadrant] <- { quadrant with Klingons = quadrant.Klingons - 1 }
                                 klingonsDestroyed <- klingonsDestroyed + 1
                             else
                                 printfn $"   (SENSORS SHOW {k.ShieldStrength} UNITS REMAINING)"
                                 quadrant.Sectors[i, j]  <- copyKlingon { k with ShieldStrength = k.ShieldStrength - int h }
                     | _ -> ()
+
+            state.Galaxy.Quadrants[fst state.CurrentQuadrant, snd state.CurrentQuadrant] <- { quadrant with Klingons = quadrant.Klingons - klingonsDestroyed }
 
 
     let s1 =  { state with 
@@ -770,55 +752,21 @@ let shieldControl state =
 (* 5690 *)
 let damageControl state =
     printfn ""
+    let enterprise = state.Enterprise
+
     if state.Enterprise.DamageControl >= 0 then
         printfn "DEVICE STATE OF REPAIR:"
-        printfn $"   WARP ENGINES = {state.Enterprise.WarpEngines:N2}"
-        printfn $"   SHORT RANGE SENSORS = {state.Enterprise.ShortRangeSensors:N2}"
-        printfn $"   LONG RANGE SENSORS = {state.Enterprise.LongRangeSensors:N2}"
-        printfn $"   PHASER CONTROL = {state.Enterprise.PhaserControl:N2}"
-        printfn $"   PHOTON TUBES = {state.Enterprise.PhotonTubes:N2}"
-        printfn $"   DAMAGE CONTROL = {state.Enterprise.DamageControl:N2}"
-        printfn $"   SHIELD CONTROL = {state.Enterprise.ShieldControl:N2}"
-        printfn $"   LIBRARY COMPUTER = {state.Enterprise.LibraryComputer:N2}"
+        printfn $"   WARP ENGINES = {enterprise.WarpEngines:N2}"
+        printfn $"   SHORT RANGE SENSORS = {enterprise.ShortRangeSensors:N2}"
+        printfn $"   LONG RANGE SENSORS = {enterprise.LongRangeSensors:N2}"
+        printfn $"   PHASER CONTROL = {enterprise.PhaserControl:N2}"
+        printfn $"   PHOTON TUBES = {enterprise.PhotonTubes:N2}"
+        printfn $"   DAMAGE CONTROL = {enterprise.DamageControl:N2}"
+        printfn $"   SHIELD CONTROL = {enterprise.ShieldControl:N2}"
+        printfn $"   LIBRARY COMPUTER = {enterprise.LibraryComputer:N2}"
     else
         printfn "DAMAGE CONTROL REPORT NOT AVAILABLE"
     state
-
-let endOfMission state =
-    printfn $"THERE WERE {state.TotalKlingons} KLINGON BATTLE CRUISERS LEFT AT"
-    printfn "THE END OF YOUR MISSION."
-    printfn ""
-    printfn ""
-    if state.TotalStarbases <> 0 then
-        printfn "THE FEDERATION IS IN NEED OF A NEW STARSHIP COMMANDER"
-        printfn "FOR A SIMILAR MISSION -- IF THERE IS A VOLUNTEER,"
-        printf "LET HIM STEP FORWARD AND ENTER 'AYE' : "
-        if readLine() = "AYE" then
-            { state with StartAgain = true }            
-        else
-            state
-    else
-        state
-
-let missionCompleted state =
-    if state.StartAgain then
-        true
-    else
-        if state.TotalKlingons = 0 then
-            printfn "CONGRATULATIONS, CAPTAIN! THE LAST KLINGON BATTLE CRUISER"
-            printfn "MENACING THE FEDERATION HAS BEEN DESTROYED."
-            printfn ""
-            printfn "YOUR EFFICIENCY RATING IS {state.NumberOfStarDays - state.StarDate}."
-            false
-        else
-            true
-
-let isEndOfGame state =
-    if state.Enterprise.Energy <= 0 then
-        endOfGame state
-        false
-    else
-        true
 
 let mainLoop() =
     start() |> ignore
@@ -841,6 +789,7 @@ let mainLoop() =
         commands |> List.iter(fun (cmd, desc) -> printfn $"{cmd} - {desc}")
         printfn "   "
         inputString "COMMAND ? "
+       
 
     let mutable state = startGame createState
     state <- shortRangeScan state
@@ -856,10 +805,13 @@ let mainLoop() =
                  | "SHE" -> shieldControl state
                  | "DAM" -> damageControl state
                  | "COM" -> computer state
-                 | "XXX" -> isOk <- false; endOfMission(state)
+                 | "XXX" -> isOk <- false; endOfGame state Endings.Quit
                  | _ -> printfn "Invalid command"; state
 
-        if isOk then isOk <- missionCompleted state
+        if state.TotalKlingons = 0 then
+            state <- endOfGame state Endings.Won
+
+        checkForFatalErrors state
 
     state.StartAgain
 

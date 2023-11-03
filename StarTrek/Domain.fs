@@ -16,6 +16,8 @@ let initialStardate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
 let fnr = int (rnd.NextDouble() * 7.98 + 1.01)
 let square (x : double) = x * x
 
+type Condition = | Green | Yellow | Red | Docked
+type Endings = Destroyed | Won | Quit | TooLong | NoEnergy | FatalError
 type SectorId = int * int
 type QuadrantId = int * int
 
@@ -27,7 +29,7 @@ type Klingon = {
 
 type Enterprise = {
     SectorId : SectorId
-    Condition : string
+    Condition : Condition
     Symbol : string
     Energy : int
     ShieldEnergy : int
@@ -75,7 +77,7 @@ let copyKlingon (klingon : Klingon) = Klingon {
 let createEnterprise sectorId : Enterprise = { 
     SectorId = sectorId; 
     Symbol = "<E>"; 
-    Condition = "GREEN" ; 
+    Condition = Condition.Green ; 
     Energy = initialEnergy;
     ShieldEnergy = initialShieldStrength;
     Torpedoes = initialTorpedoes
@@ -158,6 +160,33 @@ type State = {
     Error : bool
     }
 
+let createQuadrant x y =
+
+    let klingonCount =
+        match rnd.NextDouble() with
+            | x when x > 0.98 -> 3
+            | x when x > 0.95 -> 2
+            | x when x > 0.80 -> 1
+            | _ -> 0
+
+    let starBaseCount =
+        match rnd.NextDouble() with
+            | x when x > 0.96 -> 1
+            | _ -> 0
+
+    let starCount =
+        int  (rnd.NextDouble() * 7.98 + 1.01)
+
+    let quadrant = { 
+        Starbases = starBaseCount
+        Stars = starCount
+        Klingons = klingonCount
+        QuadrantId = (x, y)
+        Sectors = Array2D.init maxSectors maxSectors (fun i j -> createEmptySpace (i, j))
+    }
+
+    quadrant
+
 
 let currentQuadrant state = state.Galaxy.Quadrants.[fst state.CurrentQuadrant, snd state.CurrentQuadrant]
 
@@ -182,3 +211,49 @@ let getStarbases state =
             | Starbase s -> starbases <- s :: starbases
             | _ -> ()
     starbases
+
+let createState = 
+    let createGalaxy = { Quadrants = Array2D.init maxQuadrants maxQuadrants (fun i j -> createQuadrant i j) }
+
+    let arrayOfMove = [|
+        [| 0; 1|]
+        [| -1; 1|]
+        [| -1; 0|]
+        [| -1; -1|]
+        [| 0; -1|]
+        [| 1; -1|]
+        [| 1; 0|]
+        [| 1; 1|]
+        [| 0; 1|]
+        |]
+
+    let tmpStarDate = initialStardate
+
+    let s = {
+        Galaxy = createGalaxy
+        Enterprise = createEnterprise (0,0) 
+        StarDate = tmpStarDate
+        StartedOnStardate = tmpStarDate
+        NumberOfStarDays = 25 + (int) (rnd.NextDouble() * 10.0)
+        CurrentQuadrant = QuadrantId(0, 0)
+        CurrentSector = SectorId(0,0)
+        TotalKlingons = 0
+        TotalStarbases = 0
+        TotalStars = 0
+        DirectionArray = Array2D.init 9 2 (fun i j -> arrayOfMove[i][j])
+        StartAgain = false;
+        Error = false;
+        }
+
+    let mutable totalStarbases = 0
+    let mutable totalKlingons = 0
+    let mutable totalStars = 0
+
+    for i in quadrantRange do
+        for j in quadrantRange do
+            let quadrant = s.Galaxy.Quadrants[i, j]
+            totalStarbases <- totalStarbases + quadrant.Starbases
+            totalKlingons <- totalKlingons + quadrant.Klingons
+            totalStars <- totalStars + quadrant.Stars
+
+    { s with TotalKlingons = totalKlingons; TotalStarbases = totalStarbases; TotalStars = totalStars;  }
