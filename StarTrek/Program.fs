@@ -67,8 +67,6 @@ let endOfGame state reason =
         printfn "YOU HAVE INSUFFICIENT MANEUVERING ENERGY, AND SHIELD CONTROL"
         printfn "IS PRESENTLY INCAPABLE OF CROSS-CIRCUITING TO ENGINE ROOM!!"
 
-    | _ -> printfn "UNKNOWN ENDING"
-
 
     Environment.Exit(0)
 
@@ -85,11 +83,11 @@ let shortRangeScan state =
 
         let printIt (s : Sector)  =
             match s with
-            | Klingon k -> printf $" {k.Symbol}"
-            | Enterprise e -> printf $" {e.Symbol}"
-            | Star s -> printf $" {s.Symbol}"
-            | Starbase s -> printf $" {s.Symbol}"
-            | EmptySpace e -> printf $" {e.Symbol}"
+            | Klingon k -> printf $" <K>"
+            | Enterprise e -> printf $" <E>"
+            | Star s -> printf $"  * "
+            | Starbase s -> printf $" >!<"
+            | EmptySpace e -> printf $"    "
 
         for i in sectorRange do 
            printIt(sectors[line, i])
@@ -102,7 +100,6 @@ let shortRangeScan state =
         | Yellow -> Console.ForegroundColor <- ConsoleColor.Yellow; printf "YELLOW"
         | Red -> Console.ForegroundColor <- ConsoleColor.Red; printf "*RED*"
         | Docked -> Console.ForegroundColor <- ConsoleColor.Blue; printf "DOCKED"
-        | _ -> Console.ForegroundColor <- ConsoleColor.White;
         Console.ForegroundColor <- cc
 
     let sectors = (currentQuadrant state).Sectors;
@@ -525,7 +522,7 @@ let longRangeScan state =
         if (fst qadrantId) < 0 || (fst qadrantId) >= maxQuadrants || (snd qadrantId) < 0 || (snd qadrantId) >= maxQuadrants then
             None
         else
-            Some state.Galaxy.Quadrants.[fst qadrantId, snd qadrantId]
+            Some state.Galaxy.Quadrants[fst qadrantId, snd qadrantId]
 
     if state.Enterprise.LongRangeSensors < 0 then
         printfn "LONG RANGE SENSORS ARE INOPERABLE."
@@ -546,19 +543,9 @@ let longRangeScan state =
 
 let firePhasers state =
     let getPhaserUnits =
-        let mutable ok = false
-        let mutable noOfUnits = 0.0
         let energy = state.Enterprise.Energy
-
-        while not ok do
-            printfn $"ENERGY AVAILABLE = {energy} UNITS"
-
-            noOfUnits <- inputDouble "NUMBER OF UNITS TO FIRE: "
-
-            if noOfUnits > 0 && noOfUnits < energy then
-                ok <- true
-
-        double noOfUnits
+        printfn $"ENERGY AVAILABLE = {energy} UNITS"
+        inputDoubleInRange "NUMBER OF UNITS TO FIRE: " [0..energy]
 
     let mutable klingonsDestroyed = 0
     let mutable energyUsed = 0.0

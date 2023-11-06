@@ -24,6 +24,19 @@ let inputDouble (prompt : string) =
     else
         0
 
+let inputDoubleInRange prompt range =
+    let mutable num = 0.0
+    let mutable isOk = false
+
+    while not isOk do
+        printf $"{prompt}"
+        let str = readLine()
+        if Double.TryParse(str, &num) then
+            if range |> List.contains num then
+                isOk <- true
+
+    num
+
 let inputString (prompt : string) =
     printf $"{prompt}"
     readLine()

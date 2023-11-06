@@ -8,10 +8,15 @@
   <ItemGroup>
     <Content Include="QuadrantMap.txt" />
     <None Include="st.bas" />
+    <Compile Include="Domain.fsi" />
     <Compile Include="Domain.fs" />
+    <Compile Include="QuadrantNames.fsi" />
     <Compile Include="QuadrantNames.fs" />
+    <Compile Include="Input.fsi" />
     <Compile Include="Input.fs" />
+    <Compile Include="Computer.fsi" />
     <Compile Include="Computer.fs" />
+    <Compile Include="Program.fsi" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

@@ -21,16 +21,15 @@ type Endings = Destroyed | Won | Quit | TooLong | NoEnergy | FatalError
 type SectorId = int * int
 type QuadrantId = int * int
 
+[<Struct>]
 type Klingon = {
     SectorId : SectorId
     ShieldStrength : int
-    Symbol : string
 }
 
 type Enterprise = {
     SectorId : SectorId
     Condition : Condition
-    Symbol : string
     Energy : int
     ShieldEnergy : int
     Torpedoes : int
@@ -45,19 +44,19 @@ type Enterprise = {
     IsDocked : bool
 }
 
+[<Struct>]
 type Star = {
     SectorId : SectorId
-    Symbol : string
 }
 
+[<Struct>]
 type Starbase =  {
     SectorId : SectorId
-    Symbol : string
 }
 
+[<Struct>]
 type EmptySpace = {
     SectorId : SectorId
-    Symbol : string;
 }
 
 type Sector = Klingon of Klingon | Enterprise of Enterprise | Star of Star | Starbase of Starbase| EmptySpace of EmptySpace
@@ -65,18 +64,15 @@ type Sector = Klingon of Klingon | Enterprise of Enterprise | Star of Star | Sta
 let createKlingon sectorId = Klingon { 
     SectorId = sectorId; 
     ShieldStrength =  initialKlingonShieldStrength 
-    Symbol = "<K>";
     }
 
 let copyKlingon (klingon : Klingon) = Klingon { 
     SectorId = klingon.SectorId; 
     ShieldStrength =  klingon.ShieldStrength 
-    Symbol = "<K>";
     }
 
-let createEnterprise sectorId : Enterprise = { 
+let createEnterprise sectorId = Enterprise  { 
     SectorId = sectorId; 
-    Symbol = "<E>"; 
     Condition = Condition.Green ; 
     Energy = initialEnergy;
     ShieldEnergy = initialShieldStrength;
@@ -94,7 +90,6 @@ let createEnterprise sectorId : Enterprise = {
 
 let copyEnterprise (enterprise : Enterprise)  = Enterprise { 
     SectorId = enterprise.SectorId; 
-    Symbol = "<E>"; 
     Condition = enterprise.Condition; 
     Energy = enterprise.Energy;
     ShieldEnergy = enterprise.ShieldEnergy
@@ -112,17 +107,14 @@ let copyEnterprise (enterprise : Enterprise)  = Enterprise {
 
 let createStar sectorId = Star { 
     Star.SectorId = sectorId; 
-    Symbol = " * ";
     }
 
 let createStarbase sectorId = Starbase { 
     Starbase.SectorId = sectorId; 
-    Symbol = ">!<";
     }
 
 let createEmptySpace sectorId = EmptySpace { 
     EmptySpace.SectorId = sectorId; 
-    Symbol = "   ";
     }
 
 type Quadrant = {
@@ -231,7 +223,7 @@ let createState =
 
     let s = {
         Galaxy = createGalaxy
-        Enterprise = createEnterprise (0,0) 
+        Enterprise = match createEnterprise (0,0) with | Enterprise e -> e | _ -> failwith "Enterprise not created"
         StarDate = tmpStarDate
         StartedOnStardate = tmpStarDate
         NumberOfStarDays = 25 + (int) (rnd.NextDouble() * 10.0)
