@@ -19,14 +19,15 @@ val getCourse: unit -> double option
 
 val getWarp: state: State -> (int * double) option
 
-val navigateQuadrant: state: State -> x: int -> y: int -> State
+val useShieldEnergy: state: State -> warpFactor: double -> State
+
+val navigateQuadrant: state: State -> x: int -> y: int -> warpFactor: double -> State
 
 val getDecimalPart: num: double -> double
 
 val getDevice: enterprise: Enterprise -> i: int -> double
 
-val setDevice:
-  enterprise: Enterprise -> i: int -> value: double -> Enterprise
+val setDevice: enterprise: Enterprise -> i: int -> value: double -> Enterprise
 
 val getDeviceName: i: int -> string
 
@@ -34,11 +35,13 @@ val getCondition: state: State -> Condition
 
 val klingonsShooting: state: State -> State
 
-val navigateSector: state: State -> course: double -> State
+val navigateSector: state: State -> course: double -> warpFactor : double -> State
 
 val navigate: state: State -> State
 
 val longRangeScan: state: State -> State
+
+val private getKlingonsDestroyed: state: State -> quadrant: Quadrant ->  energy: double -> int
 
 val firePhasers: state: State -> State
 

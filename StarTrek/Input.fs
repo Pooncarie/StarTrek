@@ -2,7 +2,7 @@
 
 open System
 
-let readLine() = Console.ReadLine().Trim().ToUpper();
+let private readLine() = Console.ReadLine().Trim().ToUpper();
 
 let inputInteger (prompt : string) =
     printf $"{prompt}"

@@ -16,7 +16,7 @@ let initialStardate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
 let fnr = int (rnd.NextDouble() * 7.98 + 1.01)
 let square (x : double) = x * x
 
-type Condition = | Green | Yellow | Red | Docked
+type Condition = Green | Yellow | Red | Docked
 type Endings = Destroyed | Won | Quit | TooLong | NoEnergy | FatalError
 type SectorId = int * int
 type QuadrantId = int * int
@@ -148,8 +148,6 @@ type State = {
     TotalStarbases : int
     TotalStars : int    
     DirectionArray : int array2d
-    StartAgain : bool
-    Error : bool
     }
 
 let createQuadrant x y =
@@ -186,22 +184,24 @@ let getKlingons state =
     let mutable klingons = []
     let quadrant = currentQuadrant state
 
-    for i in sectorRange do
-        for j in sectorRange do
-            match quadrant.Sectors[i, j] with
+    quadrant.Sectors |> Array2D.iteri (fun i j sector ->
+            match sector with
             | Klingon k -> klingons <- k :: klingons
             | _ -> ()
+        )
+
     klingons
 
 let getStarbases state = 
     let mutable starbases = []
     let quadrant = currentQuadrant state
 
-    for i in sectorRange do
-        for j in sectorRange do
-            match quadrant.Sectors.[i, j] with
+    quadrant.Sectors |> Array2D.iteri (fun i j sector ->
+            match sector with
             | Starbase s -> starbases <- s :: starbases
             | _ -> ()
+        )
+
     starbases
 
 let createState = 
@@ -233,19 +233,16 @@ let createState =
         TotalStarbases = 0
         TotalStars = 0
         DirectionArray = Array2D.init 9 2 (fun i j -> arrayOfMove[i][j])
-        StartAgain = false;
-        Error = false;
         }
 
     let mutable totalStarbases = 0
     let mutable totalKlingons = 0
     let mutable totalStars = 0
 
-    for i in quadrantRange do
-        for j in quadrantRange do
-            let quadrant = s.Galaxy.Quadrants[i, j]
+    s.Galaxy.Quadrants |> Array2D.iteri (fun i j quadrant ->
             totalStarbases <- totalStarbases + quadrant.Starbases
             totalKlingons <- totalKlingons + quadrant.Klingons
             totalStars <- totalStars + quadrant.Stars
+        )
 
     { s with TotalKlingons = totalKlingons; TotalStarbases = totalStarbases; TotalStars = totalStars;  }

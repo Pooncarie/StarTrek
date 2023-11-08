@@ -134,8 +134,6 @@ type State =
       TotalStarbases: int
       TotalStars: int
       DirectionArray: int array2d
-      StartAgain: bool
-      Error: bool
     }
 
 val createQuadrant: x: int -> y: int -> Quadrant

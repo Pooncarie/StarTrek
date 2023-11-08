@@ -1,6 +1,6 @@
 ﻿module Input
 
-val readLine: unit -> string
+val private readLine: unit -> string
 
 val inputInteger: prompt: string -> int
 

@@ -32,7 +32,7 @@ let private computerStatusReport state =
     else
         printfn "    YOUR STUPIDITY HAS LEFT YOU ON YOUR ON IN THE GALAXY -- YOU HAVE NO STARBASES LEFT!"
 
-let private computerPhotonTorpedoData(state : State) =
+let private computerPhotonTorpedoData state =
     getKlingons state |> List.iter(fun klingon -> 
         printf "FROM ENTERPRISE TO KLINGON BATTLE CRUISER "; 
         distanceCalculator { 
