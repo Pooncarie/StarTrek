@@ -9,10 +9,4 @@
 
 
  VARIABLES
- B9 -> Total Starbases
- K9 -> Total Klingon Ships
- E -> Total Energy
- T -> State.StarDate
- T9 -> State.TotalStarDate
- T0 -> State.CurrentStarDate
- N -> warpFactor
+ 

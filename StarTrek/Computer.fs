@@ -5,7 +5,7 @@ open Domain
 open QuadrantNames
 open Input
 
-let private distanceCalculator coords = 
+let private distanceCalculator (state : State) coords = 
     let x = coords.FinalY - coords.InitialY 
     let y = coords.FinalX - coords.InitialX 
 
@@ -22,7 +22,8 @@ let private distanceCalculator coords =
        
     printfn $"DIRECTION = {d}"
     printfn $"DISTANCE = {(sqrt (double (square y + square x))):N2 }"
-            
+    ()
+
 let private computerStatusReport state =
     printfn "STATUS REPORT:"
     printfn $"    KLINGONS LEFT: {state.TotalKlingons}"
@@ -31,15 +32,17 @@ let private computerStatusReport state =
         printfn $"    THE FEDERATION IS MAINTAINING {state.TotalStarbases} STARBASES IN THE GALAXY"
     else
         printfn "    YOUR STUPIDITY HAS LEFT YOU ON YOUR ON IN THE GALAXY -- YOU HAVE NO STARBASES LEFT!"
+    state
 
 let private computerPhotonTorpedoData state =
     getKlingons state |> List.iter(fun klingon -> 
         printf "FROM ENTERPRISE TO KLINGON BATTLE CRUISER "; 
-        distanceCalculator { 
+        distanceCalculator state { 
             InitialX = double (fst state.CurrentSector + 1);
             InitialY = double (snd state.CurrentSector + 1);
             FinalX = double (fst klingon.SectorId + 1);
-            FinalY = double (snd klingon.SectorId + 1)})
+            FinalY = double (snd klingon.SectorId + 1)}) 
+    state
 
 let private computerStarbaseData state =
     let starbases = getStarbases state
@@ -49,11 +52,12 @@ let private computerStarbaseData state =
     else
         starbases |> List.iter(fun starbase -> 
             printf "FROM ENTERPRISE TO STARBASE " 
-            distanceCalculator { 
+            distanceCalculator state { 
                 InitialX = double (fst state.CurrentSector + 1);
                 InitialY = double (snd state.CurrentSector + 1); 
                 FinalX = double (fst starbase.SectorId + 1); 
                 FinalY = double (snd starbase.SectorId + 1)})
+    state
 
 (* LINE 8150 *)   
 let private directionDistanceCalculator state =
@@ -70,7 +74,9 @@ let private directionDistanceCalculator state =
         FinalY = snd finalCoordinate
         }
 
-    distanceCalculator coords
+    distanceCalculator state coords
+    state
+
 
 let private galaxyMap state  = 
     printfn $"CURRENT QUADRANT {(quadrantName state.CurrentQuadrant)}"
@@ -82,8 +88,9 @@ let private galaxyMap state  =
             printf $"{name} | "
         printfn ""
         printfn "+-------------+-------------+-------------+-------------+-------------+-------------+-------------+-------------+"
+    state
 
-let private validNav =
+let private validNav (state : State) =
     printfn "NAVIGATION DIRECTIONS"
     printfn "====================="
     printfn "4   3   2"
@@ -91,47 +98,36 @@ let private validNav =
     printfn "5 - * - 1"
     printfn "  / ' \ "
     printfn "6   7   8"
+    state
 
 let computer state =
+    let commands =
+        Map.empty.
+                Add("0", { Command = "0"; Text = "CUMULATIVE GALACTIC RECORD"; Function = computerStatusReport }).
+                Add("1", { Command = "1"; Text = "STATUS REPORT"; Function = computerStatusReport }).
+                Add("2", { Command = "2"; Text = "PHOTON TORPEDO DATA"; Function = computerPhotonTorpedoData }).
+                Add("3", { Command = "3"; Text = "STARBASE NAV DATA"; Function = computerStarbaseData }).
+                Add("4", { Command = "4"; Text = "DIRECTION/DISTANCE CALCULATOR"; Function = directionDistanceCalculator }).
+                Add("5", { Command = "5"; Text = "GALAXY MAP"; Function = galaxyMap }).
+                Add("6", { Command = "6"; Text = "NAVIGATION DIRECTIONS"; Function = validNav }).
+                Add("7", { Command = "7"; Text = "EXIT LIBRARY-COMPUTER"; Function = (fun state -> state) })
+
+    let mutable state = state
+    let cmdList = commands |> Map.toList |> List.map fst
+
     let commandMenu() =
         printfn "   "
-        printfn "FUNCTIONS AVAILABLE FROM LIBRARY-COMPUTER::"
-        printfn "0 = CUMULATIVE GALACTIC RECORD"
-        printfn "1 = STATUS REPORT"
-        printfn "2 = PHOTON TORPEDO DATA"
-        printfn "3 = STARBASE NAV DATA"
-        printfn "4 = DIRECTION/DISTANCE CALCULATOR"
-        printfn "5 = GALAXY MAP"
-        printfn "6 = NAVIGATION DIRECTIONS"
-        printfn "7 = EXIT LIBRARY-COMPUTER"
+        printfn "ENTER ONE OF THE FOLLOWING COMMANDS:"
+        commands |> Map.iter(fun key mnu -> printfn $"{mnu.Command} - {mnu.Text}")
         printfn "   "
-        inputString "COMMAND ? "
-
-    let getCommand() =
-        let mutable validCommand = false;
-        let mutable cmdOption = ""
-
-        while not validCommand do
-            let mutable cmd = commandMenu()
-            cmdOption <- match cmd with
-                            | "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" -> validCommand <- true; cmd;
-                            | _ -> printfn "Invalid command"; "";
-            printfn ""
-
-        cmdOption
-
+        inputValidString "COMMAND ? " cmdList
+       
     let mutable isOk = true
-    let mutable st = state
-
     while isOk do
-        match getCommand() with
-                | "1" -> computerStatusReport state
-                | "2" -> computerPhotonTorpedoData state
-                | "3" -> computerStarbaseData state
-                | "4" -> directionDistanceCalculator state
-                | "5" -> galaxyMap state
-                | "6" -> validNav 
-                | "7" -> isOk <- false; 
-                | _ -> ();
+        let cmd = commands[commandMenu()]
+        match cmd.Command with
+        | "7" -> isOk <- false; state <- cmd.Function state
+        | _ -> state <- cmd.Function state
 
+    
     state

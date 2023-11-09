@@ -5,7 +5,7 @@ open Input
 
 val start: unit -> unit
 
-val endOfGame: state: State -> reason: Endings -> State
+val endOfGame: state: State -> State
 
 val checkForFatalErrors: state: State -> unit
 
@@ -51,7 +51,7 @@ val shieldControl: state: State -> State
 
 val damageControl: state: State -> State
 
-val mainLoop: unit -> bool
+val mainLoop: unit -> unit
 
 val main: argv: string array -> int
 

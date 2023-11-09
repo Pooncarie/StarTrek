@@ -148,6 +148,13 @@ type State = {
     TotalStarbases : int
     TotalStars : int    
     DirectionArray : int array2d
+    EndOfGameReason : Endings option
+    }
+
+type Menu = {
+    Command : string
+    Text : string
+    Function: State -> State
     }
 
 let createQuadrant x y =
@@ -233,6 +240,7 @@ let createState =
         TotalStarbases = 0
         TotalStars = 0
         DirectionArray = Array2D.init 9 2 (fun i j -> arrayOfMove[i][j])
+        EndOfGameReason = None
         }
 
     let mutable totalStarbases = 0

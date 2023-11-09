@@ -134,6 +134,14 @@ type State =
       TotalStarbases: int
       TotalStars: int
       DirectionArray: int array2d
+      EndOfGameReason: Endings option
+    }
+
+type Menu = 
+    {
+      Command : string
+      Text : string
+      Function: State -> State
     }
 
 val createQuadrant: x: int -> y: int -> Quadrant

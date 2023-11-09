@@ -12,3 +12,5 @@ val inputString: prompt: string -> string
 
 val inputCoordinate: prompt: string -> float * float
 
+val inputValidString: prompt: string -> validStrings: string list -> string
+

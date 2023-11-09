@@ -1,19 +1,19 @@
 ﻿module Computer
 open Domain
 
-val private distanceCalculator: coords: DistanceCoordinates -> unit
+val private distanceCalculator: state: State -> coords: DistanceCoordinates -> unit
 
-val private computerStatusReport: state: State -> unit
+val private computerStatusReport: state: State -> State
 
-val private computerPhotonTorpedoData: state: State -> unit
+val private computerPhotonTorpedoData: state: State -> State
 
-val private computerStarbaseData: state: State -> unit
+val private computerStarbaseData: state: State -> State
 
-val private directionDistanceCalculator: state: State -> unit
+val private directionDistanceCalculator: state: State -> State
 
-val private galaxyMap: state: State -> unit
+val private galaxyMap: state: State -> State
 
-val private validNav: unit
+val private validNav: state: State -> State
 
 val computer: state: State -> State
 

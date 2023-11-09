@@ -23,6 +23,26 @@
 215 REM ***
 *)
 
+(*
+    This is a port of the original Star Trek game written in BASIC to F#.
+    This is a list of variables in the BASIC version.
+
+     B9 -> Total Starbases
+     K9 -> Total Klingon Ships
+     E -> Total Energy
+     E0 -> Initial Energy
+     P -> Total Photon Torpedoes
+     P0 -> Initial Photon Torpedoes
+     T -> State.StarDate
+     T9 -> State.TotalStarDate
+     T0 -> State.CurrentStarDate
+     N -> warpFactor
+     D() -> Device Array
+     K() -> Klingon array, each element is a tuple of (x, y, strength) in current Quadrant
+     Q1 & Q2 -> Curent quadrant
+     S1 & S2 -> Current sector
+*)
+
 open System
 open Domain
 open QuadrantNames
@@ -40,32 +60,33 @@ let start() =
     printfn ""
     printfn ""
 
-let endOfGame state reason =
+let endOfGame state =
     printfn $"IT IS STARDATE {state.StarDate + state.NumberOfStarDays}."
 
-    match reason with
-    | Destroyed -> 
+    match state.EndOfGameReason with
+    | Some Destroyed -> 
         printfn "THE ENTERPRISE HAS BEEN DESTROYED. THEN FEDERATION "
         printfn "WILL BE CONQUERED"
         printfn $"IT IS STARDATE {state.StarDate + state.NumberOfStarDays}"
-    | Won ->
+    | Some Won ->
         printfn "CONGRATULATIONS, CAPTAIN! THE LAST KLINGON BATTLE CRUISER"
         printfn "MENACING THE FEDERATION HAS BEEN DESTROYED."
         printfn ""
         printfn $"YOUR EFFICIENCY RATING IS {state.NumberOfStarDays - state.StarDate}."
-    | Quit ->
+    | Some Quit ->
         printfn $"THERE WERE {state.TotalKlingons} KLINGON BATTLE CRUISERS LEFT AT"
         printfn "THE END OF YOUR MISSION."
-    | TooLong ->
+    | Some TooLong ->
         printfn "YOU HAVE EXCEEDED YOUR ALLOWED DAYS"
         printfn "THE FEDERATION WILL BE CONQUERED."
-    | NoEnergy ->
+    | Some NoEnergy ->
         printfn "YOU DO NOT HAVE THE ENERGY TO COMBAT THE KLINGONS."
         printfn "THE FEDERATION WILL BE CONQUERED."
-    | FatalError ->
+    | Some FatalError ->
         printfn " ** FATAL ERROR **   YOU'VE JUST STRANDED YOUR SHIP IN SPACE"
         printfn "YOU HAVE INSUFFICIENT MANEUVERING ENERGY, AND SHIELD CONTROL"
         printfn "IS PRESENTLY INCAPABLE OF CROSS-CIRCUITING TO ENGINE ROOM!!"
+    | None -> ()
 
 
     Environment.Exit(0)
@@ -75,7 +96,7 @@ let endOfGame state reason =
 let checkForFatalErrors state =
     if state.Enterprise.ShieldEnergy + state.Enterprise.Energy <= 10 then
         if state.Enterprise.Energy < 10 ||state.Enterprise.ShieldControl < 0 then
-            endOfGame state Endings.FatalError |> ignore
+            endOfGame { state with EndOfGameReason = Some Endings.FatalError } |> ignore
     ()
   
 let shortRangeScan state = 
@@ -289,6 +310,10 @@ let navigateQuadrant state x y warpFactor  =
 
 let getDecimalPart num = num - Math.Truncate((double num))
 
+(* In the basic version the devices are stored in an array D(), some of the calculations 
+   iterate throught this array. Rather than have an array each device exists as a field
+   in the Enterprise type, this lot of funtions allowing mapping back and forth from
+   the array to the device names in the Enterprise type *)
 let getDevice enterprise i =
     match i with
     | 1 -> enterprise.WarpEngines
@@ -369,7 +394,7 @@ let klingonsShooting state =
                                     enterprise <- setDevice state.Enterprise r1 -v
                                     printfn  $"DAMAGE CONTROL REPORTS '{getDeviceName r1} DAMAGED BY THE HIT'"
                         else
-                            endOfGame state Endings.NoEnergy |> ignore
+                            endOfGame { state with EndOfGameReason = Some Endings.NoEnergy } |> ignore
                             ()
 
                     | _ -> ()
@@ -523,7 +548,7 @@ let navigate state =
                 t8 <- int (10.0 * warpFactor) / 10
             s1 <- { s1 with StarDate = s1.StarDate + t8 }
             if s1.StarDate > s1.StartedOnStardate + s1.NumberOfStarDays then 
-                s1 <- endOfGame s1 TooLong
+                s1 <- endOfGame { s1 with EndOfGameReason = Some Endings.TooLong }
             for i = 0 to (int warpSpeed) - 1 do
                 s1 <- navigateSector s1 course warpFactor
             shortRangeScan s1
@@ -751,6 +776,7 @@ let shieldControl state =
     printfn ""
     doShieldControl state |> shortRangeScan
 
+
 (* 5690 *)
 let damageControl state =
     printfn ""
@@ -771,57 +797,49 @@ let damageControl state =
     state
 
 let mainLoop() =
-    start() |> ignore
+    let commands =
+        Map.empty.
+                Add("NAV", { Command = "NAV"; Text = "TO SET COURSE"; Function = navigate }).
+                Add("SRS", { Command = "SRS"; Text = "FOR SHORT RANGE SENSOR SCAN"; Function = shortRangeScan }).
+                Add("LRS", { Command = "LRS"; Text = "FOR LONG RANGE SENSOR SCAN"; Function = longRangeScan }).
+                Add("PHA", { Command = "PHA"; Text = "TO FIRE PHASERS"; Function = firePhasers }).
+                Add("TOR", { Command = "TOR"; Text = "TO FIRE PHOTON TORPEDOES"; Function = photonTorpedoes }).
+                Add("SHE", { Command = "SHE"; Text = "FOR SHIELD CONTROL"; Function = shieldControl }).
+                Add("DAM", { Command = "DAM"; Text = "TO GET DAMAGE REPORTS"; Function = damageControl }).
+                Add("COM", { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = computer }).
+                Add("XXX", { Command = "XXX"; Text = "TO RESIGN YOUR COMMAND"; Function = endOfGame });
 
-    let commands = [
-            ("NAV", "TO SET COURSE"); 
-            ("SRS", "FOR SHORT RANGE SENSOR SCAN"); 
-            ("LRS", "FOR LONG RANGE SENSOR SCAN"); 
-            ("PHA", "TO FIRE PHASERS"); 
-            ("TOR", "TO FIRE PHOTON TORPEDOES"); 
-            ("SHE", "FOR SHIELD CONTROL"); 
-            ("DAM", "TO GET DAMAGE REPORTS"); 
-            ("COM", "TO CALL ON LIBRARY-COMPUTER"); 
-            ("XXX", "TO RESIGN YOUR COMMAND")
-        ]
+    let cmdList = commands |> Map.toList |> List.map fst
 
     let commandMenu() =
         printfn "   "
         printfn "ENTER ONE OF THE FOLLOWING COMMANDS:"
-        commands |> List.iter(fun (cmd, desc) -> printfn $"{cmd} - {desc}")
+        commands |> Map.iter(fun key mnu -> printfn $"{mnu.Command} - {mnu.Text}")
         printfn "   "
-        inputString "COMMAND ? "
+        inputValidString "COMMAND ? " cmdList
        
 
     let mutable state = startGame createState
     state <- shortRangeScan state
-    let mutable isOk = true
     
-    while isOk do
-        state <- match commandMenu() with
-                 | "NAV" -> navigate state
-                 | "SRS" -> shortRangeScan state
-                 | "LRS" -> longRangeScan state
-                 | "PHA" -> firePhasers state
-                 | "TOR" -> photonTorpedoes state
-                 | "SHE" -> shieldControl state
-                 | "DAM" -> damageControl state
-                 | "COM" -> computer state
-                 | "XXX" -> isOk <- false; endOfGame state Endings.Quit
-                 | _ -> printfn "Invalid command"; state
+    while true do
+        let cmd = commands[commandMenu()]
+        match cmd.Command with
+        | "XXX" -> state <- cmd.Function { state with EndOfGameReason = Some Endings.Quit }
+        | _ -> state <- cmd.Function state
 
         if state.TotalKlingons = 0 then
-            state <- endOfGame state Endings.Won
+            state <- endOfGame { state with EndOfGameReason = Some Endings.Won }
 
         checkForFatalErrors state
 
-    false
+    ()
 
 [<EntryPoint>]
 let main argv =
-    let mutable isOk = true
+    start()
 
-    while isOk do
-        isOk <- mainLoop()
+    while true do
+        mainLoop()
 
     0

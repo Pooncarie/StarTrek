@@ -41,6 +41,21 @@ let inputString (prompt : string) =
     printf $"{prompt}"
     readLine()
 
+let inputValidString (prompt : string)  validStrings =
+    let mutable str = ""
+    let mutable isOk = false
+
+    while not isOk do
+        printf $"{prompt}"
+        str <- readLine()
+        if validStrings |> List.contains str then
+            isOk <- true
+        else
+            printfn "INVALID COMMAND"
+            isOk <- false
+
+    str
+
 let inputCoordinate (prompt : string) =
     printf $"{prompt}"
     let str = readLine()
