@@ -155,6 +155,7 @@ type Menu = {
     Command : string
     Text : string
     Function: State -> State
+    Exit : bool
     }
 
 let createQuadrant x y =

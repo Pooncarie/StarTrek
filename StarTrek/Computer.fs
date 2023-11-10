@@ -103,14 +103,14 @@ let private validNav (state : State) =
 let computer state =
     let commands =
         [
-            { Command = "0"; Text = "CUMULATIVE GALACTIC RECORD"; Function = computerStatusReport }
-            { Command = "1"; Text = "STATUS REPORT"; Function = computerStatusReport }
-            { Command = "2"; Text = "PHOTON TORPEDO DATA"; Function = computerPhotonTorpedoData }
-            { Command = "3"; Text = "STARBASE NAV DATA"; Function = computerStarbaseData }
-            { Command = "4"; Text = "DIRECTION/DISTANCE CALCULATOR"; Function = directionDistanceCalculator }
-            { Command = "5"; Text = "GALAXY MAP"; Function = galaxyMap }
-            { Command = "6"; Text = "NAVIGATION DIRECTIONS"; Function = validNav }
-            { Command = "7"; Text = "EXIT LIBRARY-COMPUTER"; Function = (fun state -> state) }
+            { Command = "0"; Text = "CUMULATIVE GALACTIC RECORD"; Function = computerStatusReport; Exit = false }
+            { Command = "1"; Text = "STATUS REPORT"; Function = computerStatusReport; Exit = false }
+            { Command = "2"; Text = "PHOTON TORPEDO DATA"; Function = computerPhotonTorpedoData; Exit = false }
+            { Command = "3"; Text = "STARBASE NAV DATA"; Function = computerStarbaseData; Exit = false }
+            { Command = "4"; Text = "DIRECTION/DISTANCE CALCULATOR"; Function = directionDistanceCalculator; Exit = false }
+            { Command = "5"; Text = "GALAXY MAP"; Function = galaxyMap; Exit = false }
+            { Command = "6"; Text = "NAVIGATION DIRECTIONS"; Function = validNav; Exit = false }
+            { Command = "7"; Text = "EXIT LIBRARY-COMPUTER"; Function = (fun state -> state); Exit = false }
         ]
 
     let mutable state = state
@@ -119,9 +119,9 @@ let computer state =
     while isOk do
         let str = inputValidString "COMPUTER ACTIVE AND AWAITING COMMAND? " commands
         let cmd = commands |> List.find(fun x -> x.Command = str)
-        match cmd.Command with
-        | "7" -> isOk <- false; state <- cmd.Function state
-        | _ -> state <- cmd.Function state
+        match cmd.Exit with
+        | true -> isOk <- false; state <- cmd.Function state
+        | false -> state <- cmd.Function state
 
     
     state

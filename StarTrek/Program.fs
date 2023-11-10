@@ -799,15 +799,15 @@ let damageControl state =
 let mainLoop() =
     let commands =
         [
-            { Command = "NAV"; Text = "TO SET COURSE"; Function = navigate }
-            { Command = "SRS"; Text = "FOR SHORT RANGE SENSOR SCAN"; Function = shortRangeScan }
-            { Command = "LRS"; Text = "FOR LONG RANGE SENSOR SCAN"; Function = longRangeScan }
-            { Command = "PHA"; Text = "TO FIRE PHASERS"; Function = firePhasers }
-            { Command = "TOR"; Text = "TO FIRE PHOTON TORPEDOES"; Function = photonTorpedoes }
-            { Command = "SHE"; Text = "FOR SHIELD CONTROL"; Function = shieldControl }
-            { Command = "DAM"; Text = "TO GET DAMAGE REPORTS"; Function = damageControl }
-            { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = computer }
-            { Command = "XXX"; Text = "TO RESIGN YOUR COMMAND"; Function = endOfGame }
+            { Command = "NAV"; Text = "TO SET COURSE"; Function = navigate; Exit = false }
+            { Command = "SRS"; Text = "FOR SHORT RANGE SENSOR SCAN"; Function = shortRangeScan; Exit = false }
+            { Command = "LRS"; Text = "FOR LONG RANGE SENSOR SCAN"; Function = longRangeScan; Exit = false }
+            { Command = "PHA"; Text = "TO FIRE PHASERS"; Function = firePhasers; Exit = false }
+            { Command = "TOR"; Text = "TO FIRE PHOTON TORPEDOES"; Function = photonTorpedoes; Exit = false }
+            { Command = "SHE"; Text = "FOR SHIELD CONTROL"; Function = shieldControl; Exit = false }
+            { Command = "DAM"; Text = "TO GET DAMAGE REPORTS"; Function = damageControl; Exit = false }
+            { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = computer; Exit = false }
+            { Command = "XXX"; Text = "TO RESIGN YOUR COMMAND"; Function = endOfGame; Exit = true }
         ]
 
     let mutable state = startGame createState
@@ -816,9 +816,9 @@ let mainLoop() =
     while true do
         let str = inputValidString "COMMAND? " commands
         let cmd = commands |> List.find(fun x -> x.Command = str)
-        match cmd.Command with
-        | "XXX" -> state <- cmd.Function { state with EndOfGameReason = Some Endings.Quit }
-        | _ -> state <- cmd.Function state
+        match cmd.Exit with
+        | true -> state <- cmd.Function { state with EndOfGameReason = Some Endings.Quit }
+        | false -> state <- cmd.Function state
 
         if state.TotalKlingons = 0 then
             state <- endOfGame { state with EndOfGameReason = Some Endings.Won }
