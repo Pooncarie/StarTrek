@@ -42,7 +42,7 @@ let inputString (prompt : string) =
     printf $"{prompt}"
     readLine()
 
-let inputValidString (prompt : string) commands =
+let inputValidMenuOption (prompt : string) commands =
     let mutable str = ""
     let mutable isOk = false
 
@@ -58,7 +58,7 @@ let inputValidString (prompt : string) commands =
             printfn "   "
             isOk <- false
 
-    str
+    commands |> List.find(fun x -> x.Command = str)
 
 let inputCoordinate (prompt : string) =
     printf $"{prompt}"

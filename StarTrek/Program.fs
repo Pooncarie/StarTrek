@@ -797,7 +797,7 @@ let damageControl state =
     state
 
 let mainLoop() =
-    let commands =
+    let menu =
         [
             { Command = "NAV"; Text = "TO SET COURSE"; Function = navigate; Exit = false }
             { Command = "SRS"; Text = "FOR SHORT RANGE SENSOR SCAN"; Function = shortRangeScan; Exit = false }
@@ -814,8 +814,7 @@ let mainLoop() =
     state <- shortRangeScan state
     
     while true do
-        let str = inputValidString "COMMAND? " commands
-        let cmd = commands |> List.find(fun x -> x.Command = str)
+        let cmd = inputValidMenuOption "COMMAND? " menu
         match cmd.Exit with
         | true -> state <- cmd.Function { state with EndOfGameReason = Some Endings.Quit }
         | false -> state <- cmd.Function state

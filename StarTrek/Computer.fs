@@ -101,7 +101,7 @@ let private validNav (state : State) =
     state
 
 let computer state =
-    let commands =
+    let menu =
         [
             { Command = "0"; Text = "CUMULATIVE GALACTIC RECORD"; Function = computerStatusReport; Exit = false }
             { Command = "1"; Text = "STATUS REPORT"; Function = computerStatusReport; Exit = false }
@@ -110,15 +110,14 @@ let computer state =
             { Command = "4"; Text = "DIRECTION/DISTANCE CALCULATOR"; Function = directionDistanceCalculator; Exit = false }
             { Command = "5"; Text = "GALAXY MAP"; Function = galaxyMap; Exit = false }
             { Command = "6"; Text = "NAVIGATION DIRECTIONS"; Function = validNav; Exit = false }
-            { Command = "7"; Text = "EXIT LIBRARY-COMPUTER"; Function = (fun state -> state); Exit = false }
+            { Command = "7"; Text = "EXIT LIBRARY-COMPUTER"; Function = (fun state -> state); Exit = true }
         ]
 
     let mutable state = state
     let mutable isOk = true
 
     while isOk do
-        let str = inputValidString "COMPUTER ACTIVE AND AWAITING COMMAND? " commands
-        let cmd = commands |> List.find(fun x -> x.Command = str)
+        let cmd = inputValidMenuOption "COMPUTER ACTIVE AND AWAITING COMMAND? " menu
         match cmd.Exit with
         | true -> isOk <- false; state <- cmd.Function state
         | false -> state <- cmd.Function state

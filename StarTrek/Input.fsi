@@ -12,5 +12,5 @@ val inputString: prompt: string -> string
 
 val inputCoordinate: prompt: string -> float * float
 
-val inputValidString: prompt: string -> commands: Menu list -> string
+val inputValidMenuOption: prompt: string -> commands: Menu list -> Menu
 
