@@ -798,32 +798,24 @@ let damageControl state =
 
 let mainLoop() =
     let commands =
-        Map.empty.
-                Add("NAV", { Command = "NAV"; Text = "TO SET COURSE"; Function = navigate }).
-                Add("SRS", { Command = "SRS"; Text = "FOR SHORT RANGE SENSOR SCAN"; Function = shortRangeScan }).
-                Add("LRS", { Command = "LRS"; Text = "FOR LONG RANGE SENSOR SCAN"; Function = longRangeScan }).
-                Add("PHA", { Command = "PHA"; Text = "TO FIRE PHASERS"; Function = firePhasers }).
-                Add("TOR", { Command = "TOR"; Text = "TO FIRE PHOTON TORPEDOES"; Function = photonTorpedoes }).
-                Add("SHE", { Command = "SHE"; Text = "FOR SHIELD CONTROL"; Function = shieldControl }).
-                Add("DAM", { Command = "DAM"; Text = "TO GET DAMAGE REPORTS"; Function = damageControl }).
-                Add("COM", { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = computer }).
-                Add("XXX", { Command = "XXX"; Text = "TO RESIGN YOUR COMMAND"; Function = endOfGame });
-
-    let cmdList = commands |> Map.toList |> List.map fst
-
-    let commandMenu() =
-        printfn "   "
-        printfn "ENTER ONE OF THE FOLLOWING COMMANDS:"
-        commands |> Map.iter(fun key mnu -> printfn $"{mnu.Command} - {mnu.Text}")
-        printfn "   "
-        inputValidString "COMMAND ? " cmdList
-       
+        [
+            { Command = "NAV"; Text = "TO SET COURSE"; Function = navigate }
+            { Command = "SRS"; Text = "FOR SHORT RANGE SENSOR SCAN"; Function = shortRangeScan }
+            { Command = "LRS"; Text = "FOR LONG RANGE SENSOR SCAN"; Function = longRangeScan }
+            { Command = "PHA"; Text = "TO FIRE PHASERS"; Function = firePhasers }
+            { Command = "TOR"; Text = "TO FIRE PHOTON TORPEDOES"; Function = photonTorpedoes }
+            { Command = "SHE"; Text = "FOR SHIELD CONTROL"; Function = shieldControl }
+            { Command = "DAM"; Text = "TO GET DAMAGE REPORTS"; Function = damageControl }
+            { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = computer }
+            { Command = "XXX"; Text = "TO RESIGN YOUR COMMAND"; Function = endOfGame }
+        ]
 
     let mutable state = startGame createState
     state <- shortRangeScan state
     
     while true do
-        let cmd = commands[commandMenu()]
+        let str = inputValidString "COMMAND? " commands
+        let cmd = commands |> List.find(fun x -> x.Command = str)
         match cmd.Command with
         | "XXX" -> state <- cmd.Function { state with EndOfGameReason = Some Endings.Quit }
         | _ -> state <- cmd.Function state

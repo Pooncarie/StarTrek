@@ -1,6 +1,7 @@
 ﻿module Input
 
 open System
+open Domain
 
 let private readLine() = Console.ReadLine().Trim().ToUpper();
 
@@ -41,17 +42,20 @@ let inputString (prompt : string) =
     printf $"{prompt}"
     readLine()
 
-let inputValidString (prompt : string)  validStrings =
+let inputValidString (prompt : string) commands =
     let mutable str = ""
     let mutable isOk = false
 
     while not isOk do
         printf $"{prompt}"
         str <- readLine()
-        if validStrings |> List.contains str then
+        if commands |> List.exists(fun x -> x.Command = str) then
             isOk <- true
         else
-            printfn "INVALID COMMAND"
+            printfn "   "
+            printfn "ENTER ONE OF THE FOLLOWING:"
+            commands |> List.iter(fun mnu -> printfn $"{mnu.Command} - {mnu.Text}")
+            printfn "   "
             isOk <- false
 
     str

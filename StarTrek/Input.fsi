@@ -1,5 +1,5 @@
 ﻿module Input
-
+open Domain
 val private readLine: unit -> string
 
 val inputInteger: prompt: string -> int
@@ -12,5 +12,5 @@ val inputString: prompt: string -> string
 
 val inputCoordinate: prompt: string -> float * float
 
-val inputValidString: prompt: string -> validStrings: string list -> string
+val inputValidString: prompt: string -> commands: Menu list -> string
 

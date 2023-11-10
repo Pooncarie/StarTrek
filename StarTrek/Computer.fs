@@ -102,29 +102,23 @@ let private validNav (state : State) =
 
 let computer state =
     let commands =
-        Map.empty.
-                Add("0", { Command = "0"; Text = "CUMULATIVE GALACTIC RECORD"; Function = computerStatusReport }).
-                Add("1", { Command = "1"; Text = "STATUS REPORT"; Function = computerStatusReport }).
-                Add("2", { Command = "2"; Text = "PHOTON TORPEDO DATA"; Function = computerPhotonTorpedoData }).
-                Add("3", { Command = "3"; Text = "STARBASE NAV DATA"; Function = computerStarbaseData }).
-                Add("4", { Command = "4"; Text = "DIRECTION/DISTANCE CALCULATOR"; Function = directionDistanceCalculator }).
-                Add("5", { Command = "5"; Text = "GALAXY MAP"; Function = galaxyMap }).
-                Add("6", { Command = "6"; Text = "NAVIGATION DIRECTIONS"; Function = validNav }).
-                Add("7", { Command = "7"; Text = "EXIT LIBRARY-COMPUTER"; Function = (fun state -> state) })
+        [
+            { Command = "0"; Text = "CUMULATIVE GALACTIC RECORD"; Function = computerStatusReport }
+            { Command = "1"; Text = "STATUS REPORT"; Function = computerStatusReport }
+            { Command = "2"; Text = "PHOTON TORPEDO DATA"; Function = computerPhotonTorpedoData }
+            { Command = "3"; Text = "STARBASE NAV DATA"; Function = computerStarbaseData }
+            { Command = "4"; Text = "DIRECTION/DISTANCE CALCULATOR"; Function = directionDistanceCalculator }
+            { Command = "5"; Text = "GALAXY MAP"; Function = galaxyMap }
+            { Command = "6"; Text = "NAVIGATION DIRECTIONS"; Function = validNav }
+            { Command = "7"; Text = "EXIT LIBRARY-COMPUTER"; Function = (fun state -> state) }
+        ]
 
     let mutable state = state
-    let cmdList = commands |> Map.toList |> List.map fst
-
-    let commandMenu() =
-        printfn "   "
-        printfn "ENTER ONE OF THE FOLLOWING COMMANDS:"
-        commands |> Map.iter(fun key mnu -> printfn $"{mnu.Command} - {mnu.Text}")
-        printfn "   "
-        inputValidString "COMMAND ? " cmdList
-       
     let mutable isOk = true
+
     while isOk do
-        let cmd = commands[commandMenu()]
+        let str = inputValidString "COMPUTER ACTIVE AND AWAITING COMMAND? " commands
+        let cmd = commands |> List.find(fun x -> x.Command = str)
         match cmd.Command with
         | "7" -> isOk <- false; state <- cmd.Function state
         | _ -> state <- cmd.Function state

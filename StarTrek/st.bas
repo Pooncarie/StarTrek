@@ -63,7 +63,7 @@
 810 REM SETUP WHAT EXISTS IN GALAXY . . .
 815 REM K3= # KLINGONS  B3= # STARBASES  S3 = # STARS
 816 REM K9= TOTAL # KLINGONS  B9= TOTAL # STARBASES
-720 REM ************************************************
+817 REM ************************************************
 820 FOR I=1 TO 8
 821     FOR J = 1 TO 8 
 822         K3 = 0 
@@ -73,12 +73,11 @@
 860         IF R1 > .95 THEN K3=2: K9 = K9 + 2 : GOTO 980
 870         IF R1 > .80 THEN K3=1: K9 = K9 + 1
 980         B3=0
-REM
 981         IF RND(1) > .96 THEN B3=1 : B9 = B9 + 1
 1040        G(I,J) = K3*100+B3*10+FNR(1)
 1041    NEXT J 
 1042 NEXT I 
-1043 IF K9 > T9 THEN T9 = K9 + 1 REM @@@@@@@@@@@@@
+1043 IF K9 > T9 THEN T9 = K9 + 1 
 1100 IF B9 <> 0 THEN1200
 1150 IF G(Q1,Q2) < 200 THEN G(Q1,Q2)=G(Q1,Q2)+120 : K9 = K9 + 1
 1160 B9=1:G(Q1, Q2) = G(Q1, Q2) + 10 : Q1 = FNR(1) : Q2 = FNR(1)
@@ -122,13 +121,13 @@ REM
 1590 FOR I=1 TO 3
 1591    K(I,1)=0
 1592    K(I,2)=0
-1592 NEXT I
+1593 NEXT I
 1600 FOR I=1 TO 3
 1601    K(I,3)=0
 1602 NEXT I
 1603 Q$=Z$+Z$+Z$+Z$+Z$+Z$+Z$+LEFT$(Z$,17)
 
-1601 REM ******************************************************************
+1604 REM ******************************************************************
 1660 REM POSITION ENTERPRISE IN QUADRANT, THEN PLACE "K3" KLINGONS, &
 1670 REM "B3" STARBASES, & "S3" STARS ELSEWHERE.
 1671 REM ******************************************************************
@@ -169,7 +168,7 @@ REM
 1981 REM ******************************************************************
 1982 REM CHECK FOR FATAL ERRORS
 1983 REM ******************************************************************
-1990 IF S+E > 10 THEN IF E > 10 OR D(7)=0 THEN 2060 REM ****** GET COMMAND **********
+1990 IF S+E > 10 THEN IF E > 10 OR D(7)=0 THEN 2060 
 2020 PRINT
 2021 PRINT " ** FATAL ERROR **   YOU'VE JUST STRANDED YOUR SHIP IN "
 2030 PRINT "SPACE"
@@ -180,12 +179,12 @@ REM
 2051 GOTO 6220
 
 
-2051 REM ******************************************************************
-2052 REM GET COMMAND
-2053 REM ******************************************************************
+2052 REM ******************************************************************
+2053 REM GET COMMAND
+2054 REM ******************************************************************
 2060 INPUT"COMMAND";A$
 2080 FOR I=1 TO 9
-2081    IF LEFT$(A$,3) <> MID$(A1$,3*I-2,3) THEN 2160   REM ****** EXIT LOOP ******
+2081    IF LEFT$(A$,3) <> MID$(A1$,3*I-2,3) THEN 2160   
 2140    ON I GOTO 2300,1980,4000,4260,4700,5530,5690,7290,6270
 2160 NEXT I
 2161 PRINT"ENTER ONE OF THE FOLLOWING:"
@@ -199,20 +198,20 @@ REM
 2250 PRINT"  COM  (TO CALL ON LIBRARY-COMPUTER)"
 2260 PRINT"  XXX  (TO RESIGN YOUR COMMAND)"
 2261 PRINT
-2262 GOTO 1990 REM **** CHECK FOR FATAL ERRORS
+2262 GOTO 1990 
 
-2261 REM ******************************************************************
+2263 REM ******************************************************************
 2290 REM COURSE CONTROL BEGINS HERE
 2291 REM ******************************************************************
 2300 INPUT "COURSE (0-9)"; C1
 2301 IF C1=9 THEN C1=1
 2310 IF C1 >= 1 AND C1 < 9 THEN 2350
 2330 PRINT "   LT. SULU REPORTS, 'INCORRECT COURSE DATA, SIR!'"
-2331 GOTO 1990 REM **** CHECK FOR FATAL ERRORS
+2331 GOTO 1990 
 
-2331 REM *****************************************************************
-2332 REM WARP FACTOR SELECTION
-2333 REM *****************************************************************
+2332 REM *****************************************************************
+2333 REM WARP FACTOR SELECTION
+2334 REM *****************************************************************
 2350 X$="8"
 2351 IF D(1) < 0 THEN X$="0.2"
 2360 PRINT "WARP FACTOR (0-";X$;")";
@@ -230,8 +229,7 @@ REM
 2530 IF S < N-E OR D(7) < 0 THEN 1990
 2550 PRINT "DEFLECTOR CONTROL ROOM ACKNOWLEDGES";S;"UNITS OF ENERGY"
 2560 PRINT "                         PRESENTLY DEPLOYED TO SHIELDS."
-2570 GOTO 1990 REM **** CHECK FOR FATAL ERRORS
-
+2570 GOTO 1990 
 2571 REM **********************************************************
 2580 REM KLINGONS MOVE/FIRE ON MOVING STARSHIP . . .
 2581 REM **********************************************************
@@ -242,15 +240,15 @@ REM
 2612    Z2=K(I,2)
 2613    GOSUB 8670
 2614    GOSUB 8590
-2660    K(I,1)=Z1   REM Z1 AND Z2 ARE NEW KLINGON COORDINATES
+2660    K(I,1)=Z1   
 2661    K(I,2)=Z2
 2662    A$="+K+"
 2663    GOSUB 8670
 2700 NEXT I
 2701 GOSUB 6000
 2702 D1=0
-2702 D6=W1
-2703 IF W1 >= 1 THEN D6=1
+2703 D6=W1
+2704 IF W1 >= 1 THEN D6=1
 2770 FOR I=1 TO 8
 2771    IF D(I) >= 0 THEN 2880
 2790    D(I) = D(I) + D6
@@ -343,7 +341,7 @@ REM
 4233 NEXT I
 4234 GOTO 1990
 
-4231 REM *********************************************************
+4235 REM *********************************************************
 4250 REM PHASER CONTROL CODE BEGINS HERE
 4251 REM *********************************************************
 4260 IFD(4)<0THENPRINT"PHASERS INOPERATIVE":GOTO1990
@@ -372,11 +370,11 @@ REM
 4670 NEXTI
 4671 GOSUB6000:GOTO1990
 
-4671 REM *********************************************************
+4672 REM *********************************************************
 4690 REM PHOTON TORPEDO CODE BEGINS HERE
 4691 REM *********************************************************
 4700 IFP<=0THENPRINT"ALL PHOTON TORPEDOES EXPENDED":GOTO 1990
-4730 IFD(5)<0THENP  :GOTO1990
+4730 IFD(5)<0THENPRINT"PHOTON TUBES ARE NOT OPERATIONAL":GOTO1990
 4760 INPUT"PHOTON TORPEDO COURSE (1-9)";C1:IFC1=9THENC1=1
 4780 IFC1>=1ANDC1<9THEN4850
 4790 PRINT"ENSIGN CHEKOV REPORTS,  'INCORRECT COURSE DATA, SIR!'"
@@ -515,8 +513,7 @@ REM
 6621 S=0
 6622 GOTO 6720
 
-6650 IF K3 > 0 THEN C$=" *RED*"
-6651 GOTO 6720
+6650 IF K3 > 0 THEN C$=" *RED*":GOTO 6720
 
 6660 C$=" GREEN"
 6661 IF E < E0*.1 THEN C$="YELLOW"
@@ -560,8 +557,8 @@ REM
 7540 REM INPUT"DO YOU WANT A HARDCOPY? IS THE TTY ON (Y/N)";A$
 7542 REM IFA$="Y"THENPOKE1229,2:POKE1237,3:NULL1
 7543 REM *********************************************************************
-7543 PRINT:PRINT"        ";
-7544 PRINT"COMPUTER RECORD OF GALAXY FOR QUADRANT";Q1;",";Q2
+7544 PRINT:PRINT"        ";
+7545 PRINT"COMPUTER RECORD OF GALAXY FOR QUADRANT";Q1;",";Q2
 7546 PRINT
 7550 PRINT"       1     2     3     4     5     6     7     8"
 7560 O1$="     ----- ----- ----- ----- ----- ----- ----- -----"
@@ -601,9 +598,9 @@ REM
 8121    A=S2
 8122    GOTO 8220
 
-8121    REM ******************************************************************
-8122    REM DIRECTION/DISTANCE CALCULATOR
 8123    REM ******************************************************************
+8124    REM DIRECTION/DISTANCE CALCULATOR
+8125    REM ******************************************************************
 8150    PRINT"DIRECTION/DISTANCE CALCULATOR:"
 8160    PRINT"YOU ARE AT QUADRANT ";Q1;",";Q2;" SECTOR ";S1;",";S2
 8170    PRINT"PLEASE ENTER":INPUT"  INITIAL COORDINATES (X,Y)";C1,A

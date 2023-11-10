@@ -30,17 +30,17 @@ type Klingon = {
 type Enterprise = {
     SectorId : SectorId
     Condition : Condition
-    Energy : int
-    ShieldEnergy : int
-    Torpedoes : int
-    WarpEngines : double                   // D(1)
-    ShortRangeSensors : double             // D(2)
-    LongRangeSensors : double              // D(3)
-    PhaserControl : double                 // D(4) 
-    PhotonTubes : double                   // D(5)
-    DamageControl : double                 // D(6)
-    ShieldControl : double                 // D(7)
-    LibraryComputer : double               // D(8)
+    Energy : int                            // E
+    ShieldEnergy : int                      // S
+    Torpedoes : int                         // P
+    WarpEngines : double                    // D(1)
+    ShortRangeSensors : double              // D(2)
+    LongRangeSensors : double               // D(3)
+    PhaserControl : double                  // D(4) 
+    PhotonTubes : double                    // D(5)
+    DamageControl : double                  // D(6)
+    ShieldControl : double                  // D(7)
+    LibraryComputer : double                // D(8)
     IsDocked : bool
 }
 
