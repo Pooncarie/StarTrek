@@ -5,24 +5,24 @@ open Domain
 open QuadrantNames
 open Input
 
-let private distanceCalculator (state : State) coords = 
-    let x = coords.FinalY - coords.InitialY 
-    let y = coords.FinalX - coords.InitialX 
+(* copied from c# version at coding-horror/basic-computer-games *)
+let private getDirection (deltaX : double) (deltaY : double) =
+    let deltaXDominant = abs deltaX > abs deltaY
+    let fractionalPart = if deltaXDominant then deltaY / deltaX else -deltaX / deltaY
+    let nearestCardinal = match deltaXDominant with
+                            | true -> if deltaX > 0 then 7.0 else 3.0
+                            | false -> if deltaY > 0 then 1.0 else 5.0
+    let direction = nearestCardinal + fractionalPart
+    if direction < 1 then direction + 8.0 else direction
 
-    let d = match (x, y) with
-                | (x,y) when y = 0 && x > 0 -> 1
-                | (x,y) when y = 0 && x < 0 -> 5
-                | (x,y) when x = 0 && y > 0 -> 7
-                | (x,y) when x = 0 && y < 0 -> 3
-                | (x,y) when x > 0 && y > 0 -> 8
-                | (x,y) when x > 0 && y < 0 -> 2
-                | (x,y) when x < 0 && y < 0 -> 4
-                | (x,y) when x < 0 && y > 0 -> 6
-                | _ ->  0
-       
-    printfn $"DIRECTION = {d}"
-    printfn $"DISTANCE = {(sqrt (double (square y + square x))):N2 }"
-    ()
+let private getDistance deltaX deltaY =
+    sqrt (double (square deltaX + square deltaY))
+
+let private distanceCalculator (state : State) coords = 
+    let deltaX = coords.FinalX - coords.InitialX
+    let deltaY = coords.FinalY - coords.InitialY
+    printfn $"DIRECTION = {(getDirection deltaX deltaY):D2}"
+    printfn $"DISTANCE = {(getDistance deltaX deltaY):D2}"
 
 let private computerStatusReport state =
     printfn "STATUS REPORT:"
@@ -41,7 +41,9 @@ let private computerPhotonTorpedoData state =
             InitialX = double (fst state.CurrentSector + 1);
             InitialY = double (snd state.CurrentSector + 1);
             FinalX = double (fst klingon.SectorId + 1);
-            FinalY = double (snd klingon.SectorId + 1)}) 
+            FinalY = double (snd klingon.SectorId + 1)
+            }
+        ) 
     state
 
 let private computerStarbaseData state =
@@ -56,11 +58,14 @@ let private computerStarbaseData state =
                 InitialX = double (fst state.CurrentSector + 1);
                 InitialY = double (snd state.CurrentSector + 1); 
                 FinalX = double (fst starbase.SectorId + 1); 
-                FinalY = double (snd starbase.SectorId + 1)})
+                FinalY = double (snd starbase.SectorId + 1)
+                }
+            )
     state
 
 (* LINE 8150 *)   
 let private directionDistanceCalculator state =
+    printfn ""
     printfn "DIRECTION/DISTANCE CALCULATOR:"
     printfn $"YOU ARE AT QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1} SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
     printfn ""

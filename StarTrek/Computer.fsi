@@ -1,6 +1,11 @@
 ﻿module Computer
 open Domain
 
+
+val private getDirection: deltaX: double -> deltaY: double -> double
+
+val private getDistance: deltaX: double -> deltaY: double -> double
+
 val private distanceCalculator: state: State -> coords: DistanceCoordinates -> unit
 
 val private computerStatusReport: state: State -> State
