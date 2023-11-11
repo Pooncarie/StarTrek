@@ -18,14 +18,25 @@ let private getDirection (deltaX : double) (deltaY : double) =
 let private getDistance deltaX deltaY =
     sqrt (double (square deltaX + square deltaY))
 
-let private distanceCalculator (state : State) coords = 
+let private remove00 (str : string) = 
+    let bits = str.Split('.')
+    if bits.Length = 2 then
+        if bits[1] = "00" then bits[0] else str
+    else
+        str
+
+let private doCalculations (state : State) coords = 
     let deltaX = coords.FinalX - coords.InitialX
     let deltaY = coords.FinalY - coords.InitialY
-    printfn $"DIRECTION = {(getDirection deltaX deltaY):D2}"
-    printfn $"DISTANCE = {(getDistance deltaX deltaY):D2}"
+
+    let dirStr = remove00 $"{(getDirection deltaX deltaY):N2}" 
+    let disStr = remove00 $"{(getDistance deltaX deltaY):N2}"
+    printfn $"DIRECTION = {dirStr}"
+    printfn $"DISTANCE = {disStr}"
 
 let private computerStatusReport state =
     printfn "STATUS REPORT:"
+
     printfn $"    KLINGONS LEFT: {state.TotalKlingons}"
     printfn $"    MISSION MUST BE COMPLETED IN {state.NumberOfStarDays - (state.StarDate - state.StartedOnStardate)} DAYS"
     if state.TotalStarbases > 0 then
@@ -37,7 +48,7 @@ let private computerStatusReport state =
 let private computerPhotonTorpedoData state =
     getKlingons state |> List.iter(fun klingon -> 
         printf "FROM ENTERPRISE TO KLINGON BATTLE CRUISER "; 
-        distanceCalculator state { 
+        doCalculations state { 
             InitialX = double (fst state.CurrentSector + 1);
             InitialY = double (snd state.CurrentSector + 1);
             FinalX = double (fst klingon.SectorId + 1);
@@ -54,7 +65,7 @@ let private computerStarbaseData state =
     else
         starbases |> List.iter(fun starbase -> 
             printf "FROM ENTERPRISE TO STARBASE " 
-            distanceCalculator state { 
+            doCalculations state { 
                 InitialX = double (fst state.CurrentSector + 1);
                 InitialY = double (snd state.CurrentSector + 1); 
                 FinalX = double (fst starbase.SectorId + 1); 
@@ -72,14 +83,19 @@ let private directionDistanceCalculator state =
     let initCoordinate = inputCoordinate "PLEASE ENTER INITIAL COORDINATES (X,Y): "
     let finalCoordinate = inputCoordinate "PLEASE ENTER FINAL COORDINATES (X,Y): "
 
-    let coords = {
-        InitialX = fst initCoordinate
-        InitialY = snd initCoordinate
-        FinalX = fst finalCoordinate
-        FinalY = snd finalCoordinate
-        }
+    match (initCoordinate, finalCoordinate) with
+    | ((0.0, 0.0), (0.0, 0.0)) ->  printfn "INCORRECT COORDINATES"
+    | ((0.0, 0.0), _) ->  printfn "INCORRECT COORDINATES"
+    | (_, (0.0, 0.0)) ->  printfn "INCORRECT COORDINATES"
+    | _ ->
+        let coords = {
+            InitialX = fst initCoordinate
+            InitialY = snd initCoordinate
+            FinalX = fst finalCoordinate
+            FinalY = snd finalCoordinate
+            }
 
-    distanceCalculator state coords
+        doCalculations state coords
     state
 
 

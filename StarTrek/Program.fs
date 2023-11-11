@@ -50,7 +50,7 @@ open Input
 open Computer
 
 let start() =
-    [0..10] |> List.iter(fun x -> printfn "")
+    [0..2] |> List.iter(fun x -> printfn "")
     printfn "                                    ,------*------,"
     printfn "                    ,-------------   '---  ------'"
     printfn "                     '-------- --'      / /"

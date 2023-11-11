@@ -74,8 +74,11 @@ let inputCoordinate (prompt : string) =
         let y = bits.[1].Trim()
         if Double.TryParse(x, &numX) then
             if Double.TryParse(y, &numY) then
-                (numX, numY)
+                if sectorRange |> List.contains(int numX-1) && sectorRange |> List.contains(int  numY-1) then
+                    (numX, numY)
+                else
+                    (0, 0)
             else
-                (0.0, 0.0)
+                (0, 0)
         else
-            (0.0, 0.0)
+            (0, 0)
