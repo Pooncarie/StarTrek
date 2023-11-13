@@ -48,7 +48,6 @@ open Domain
 open QuadrantNames
 open Input
 open Computer
-open Computer2
 
 let start() =
     [0..2] |> List.iter(fun x -> printfn "")
@@ -801,7 +800,7 @@ let mainLoop() =
             { Command = "TOR"; Text = "TO FIRE PHOTON TORPEDOES"; Function = photonTorpedoes; Exit = false }
             { Command = "SHE"; Text = "FOR SHIELD CONTROL"; Function = shieldControl; Exit = false }
             { Command = "DAM"; Text = "TO GET DAMAGE REPORTS"; Function = damageControl; Exit = false }
-            { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = Computer2.computer; Exit = false }
+            { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = Computer.computer; Exit = false }
             { Command = "XXX"; Text = "TO RESIGN YOUR COMMAND"; Function = endOfGame; Exit = true }
         ]
 

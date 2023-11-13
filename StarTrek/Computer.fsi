@@ -19,8 +19,6 @@ val private computerPhotonTorpedoData: state: State -> string list
 
 val private computerStarbaseData: state: State -> string list
 
-val private printList: lst: string list -> unit
-
 val private validNav: state: State -> string list
 
 val private galaxyMap: state: State -> string list

@@ -16,7 +16,6 @@
     <Compile Include="Input.fs" />
     <Compile Include="Computer.fsi" />
     <Compile Include="Computer.fs" />
-    <Compile Include="Computer2.fs" />
     <Compile Include="Program.fsi" />
     <Compile Include="Program.fs" />
   </ItemGroup>

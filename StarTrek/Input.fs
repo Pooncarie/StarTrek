@@ -3,38 +3,67 @@
 open System
 open Domain
 
-let private readLine() = Console.ReadLine().Trim().ToUpper();
+let private readLine() : string = Console.ReadLine().Trim().ToUpper();
 
-let inputInteger (prompt : string) =
-    printf $"{prompt}"
-    let str = readLine()
+let private  getInteger (lineReader: unit -> string)  : int option =
+    let str = lineReader()
     let mutable num = 0
 
     if Int32.TryParse(str, &num) then
-        num
+        Some num
     else
-        0
+       None
 
-let inputDouble (prompt : string) =
-    printf $"{prompt}"
-    let str = readLine()
+let private  getDouble (lineReader: unit -> string)  : double option =
+    let str = lineReader()
     let mutable num = 0.0
 
     if Double.TryParse(str, &num) then
-        num
+        Some num
     else
-        0
+        None
 
-let inputDoubleInRange prompt range =
+let private getDoubleInRange (lineReader: unit -> string)  range : double option =
+    let str = lineReader()
+    let mutable num = 0.0
+
+    if Double.TryParse(str, &num) then
+        if range |> List.contains num then
+            Some num
+        else
+            None
+    else
+        None
+
+let inputInteger (prompt : string) =
+    let mutable isOk = false
+    let mutable num = 0
+    while not isOk do
+        printf $"{prompt}"
+        getInteger readLine |> function
+            | Some x -> num <- x; isOk <- true
+            | None -> printfn "!NUMBER EXPECTED - RETRY INPUT LINE"; isOk <- false
+    num
+
+let inputDouble (prompt : string) =
+    let mutable isOk = false
+    let mutable num = 0.0
+    while not isOk do
+        printf $"{prompt}"
+        getDouble readLine |> function
+            | Some x -> num <- x; isOk <- true
+            | None -> printfn "!NUMBER EXPECTED - RETRY INPUT LINE"; isOk <- false
+    num
+
+let inputDoubleInRange (prompt : string) range =
     let mutable num = 0.0
     let mutable isOk = false
 
     while not isOk do
         printf $"{prompt}"
-        let str = readLine()
-        if Double.TryParse(str, &num) then
-            if range |> List.contains num then
-                isOk <- true
+        getDoubleInRange readLine range |> function
+            | Some x -> num <- x; isOk <- true
+            | None -> printfn $"!NUMBER IN {range |> List.min} - {range |> List.max} EXPECTED - RETRY INPUT LINE"; isOk <- false
 
     num
 

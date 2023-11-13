@@ -27,17 +27,44 @@ let private remove00 (str : string) =
 let private doDirectionCalculations coords = 
     let deltaX = coords.FinalX - coords.InitialX
     let deltaY = coords.FinalY - coords.InitialY
-
     let dirStr = remove00 $"{(getDirection deltaX deltaY):N2}" 
     $"DIRECTION = {dirStr}"
 
 let private doDistanceCalculations coords = 
     let deltaX = coords.FinalX - coords.InitialX
     let deltaY = coords.FinalY - coords.InitialY
-
     let disStr = remove00 $"{(getDistance deltaX deltaY):N2}"
     $"DISTANCE = {disStr}"
 
+let private getDirectionDistance initCoordinate finalCoordinate  =
+    let makeCoordinates initCoordinate finalCoordinate = 
+        { 
+            InitialX = fst initCoordinate
+            InitialY = snd initCoordinate
+            FinalX = fst finalCoordinate
+            FinalY = snd finalCoordinate
+        }
+
+    match (initCoordinate, finalCoordinate) with
+    | (Some i, Some j) ->
+        let coords = makeCoordinates i j
+        [""; doDirectionCalculations coords; doDistanceCalculations coords]
+    | (_, _) ->  ["INCORRECT COORDINATES"]
+
+(* Menu option 1 STATUS REPORT *)
+let private computerStatusReport state =
+    let fst = [
+        "STATUS REPORT:"
+        $"    KLINGONS LEFT: {state.TotalKlingons}"
+        $"    MISSION MUST BE COMPLETED IN {double state.NumberOfStarDays - (state.StarDate - state.StartedOnStardate)} DAYS"
+        ]
+
+    if state.TotalStarbases > 0 then
+        fst |> List.append [$"    THE FEDERATION IS MAINTAINING {state.TotalStarbases} STARBASES IN THE GALAXY"]
+    else
+        fst |> List.append ["    YOUR STUPIDITY HAS LEFT YOU ON YOUR ON IN THE GALAXY -- YOU HAVE NO STARBASES LEFT!"]
+    
+(* Menu option 2 PHOTON TORPEDO DATA *)
 let private computerPhotonTorpedoData state =
     let makeCoordinates (klingon : Klingon) = 
         { 
@@ -56,30 +83,7 @@ let private computerPhotonTorpedoData state =
         ]
         ) |> List.concat 
 
-let private getDirectionDistance initCoordinate finalCoordinate  =
-    let makeCoordinates initCoordinate finalCoordinate = 
-        { 
-            InitialX = fst initCoordinate
-            InitialY = snd initCoordinate
-            FinalX = fst finalCoordinate
-            FinalY = snd finalCoordinate
-        }
-
-    match (initCoordinate, finalCoordinate) with
-    | (Some i, Some j) ->
-        let coords = makeCoordinates i j
-        [""; doDirectionCalculations coords; doDistanceCalculations coords]
-    | (_, _) ->  ["INCORRECT COORDINATES"]
-    
-
-let private directionDistanceCalculator state  =
-    printfn "DIRECTION/DISTANCE CALCULATOR:"
-    printfn $"YOU ARE AT QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1} SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
-    printfn ""
-    let initCoordinate = inputCoordinate "PLEASE ENTER INITIAL COORDINATES (X,Y): "
-    let finalCoordinate = inputCoordinate "PLEASE ENTER FINAL COORDINATES (X,Y): "
-    getDirectionDistance initCoordinate finalCoordinate
-    
+ (* Menu option 3 STARBASE NAV DATA *)
 let private computerStarbaseData state =
     let makeCoordinates state (starbase : Starbase) = 
         { 
@@ -104,33 +108,17 @@ let private computerStarbaseData state =
                 doDistanceCalculations coords
             ] 
             ) |> List.concat
+
+(* Menu option 4 DIRECTION/DISTANCE CALCULATOR *)
+let private directionDistanceCalculator state  =
+    printfn "DIRECTION/DISTANCE CALCULATOR:"
+    printfn $"YOU ARE AT QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1} SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
+    printfn ""
+    let initCoordinate = inputCoordinate "PLEASE ENTER INITIAL COORDINATES (X,Y): "
+    let finalCoordinate = inputCoordinate "PLEASE ENTER FINAL COORDINATES (X,Y): "
+    getDirectionDistance initCoordinate finalCoordinate
     
-
-
-let private validNav (state : State) =
-    [
-        "NAVIGATION DIRECTIONS"
-        "====================="
-        "4   3   2"
-        "  \ ' /"
-        "5 - * - 1"
-        "  / ' \ "
-        "6   7   8"
-        ""
-    ]
-
-let private computerStatusReport state =
-    let fst = [
-        "STATUS REPORT:"
-        $"    KLINGONS LEFT: {state.TotalKlingons}"
-        $"    MISSION MUST BE COMPLETED IN {double state.NumberOfStarDays - (state.StarDate - state.StartedOnStardate)} DAYS"
-        ]
-
-    if state.TotalStarbases > 0 then
-        fst |> List.append [$"    THE FEDERATION IS MAINTAINING {state.TotalStarbases} STARBASES IN THE GALAXY"]
-    else
-        fst |> List.append ["    YOUR STUPIDITY HAS LEFT YOU ON YOUR ON IN THE GALAXY -- YOU HAVE NO STARBASES LEFT!"]
-    
+(* Menu option 5 GALACY MAP *)
 let private galaxyMap state  = 
     let printLine i : string =
         let mutable line = "| "
@@ -150,9 +138,19 @@ let private galaxyMap state  =
         $"CURRENT QUADRANT {(quadrantName state.CurrentQuadrant)}"
         "+-I-----------+-II----------+-III---------+-IV----------+-I-----------+-II----------+-III---------+-IV----------+"
     ] 
-
-let private printList (lst : string list) =
-    lst |> List.iter(fun line -> printfn "%s" line)
+    
+(* Menu option 6 NAVIGATION DIRECTIONS *)
+let private validNav (state : State)  =
+    [
+        "NAVIGATION DIRECTIONS"
+        "====================="
+        "4   3   2"
+        "  \ ' /"
+        "5 - * - 1"
+        "  / ' \ "
+        "6   7   8"
+        ""
+    ]
 
 let computer (state : State) =
     let menu =
@@ -164,8 +162,10 @@ let computer (state : State) =
             { Key = "5"; Text = "GALAXY MAP"; Function = galaxyMap; Exit = false }
             { Key = "6"; Text = "NAVIGATION DIRECTIONS"; Function = validNav; Exit = false }
             { Key = "7"; Text = "EXIT LIBRARY-COMPUTER"; Function = (fun state -> [""]); Exit = true }
-
         ]
+
+    let printList (lst : string list) =
+        lst |> List.iter(fun line -> printfn "%s" line)
 
     let mutable isOk = true
 
