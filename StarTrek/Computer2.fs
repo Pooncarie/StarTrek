@@ -1,4 +1,4 @@
-﻿module Computer
+﻿module Computer2
 
 open Domain
 open Input

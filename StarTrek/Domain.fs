@@ -12,7 +12,7 @@ let initialEnergy = 3000
 let initialShieldStrength = 0
 let initialTorpedoes = 10
 let initialKlingonShieldStrength = int (200.0 * (0.5 + rnd.NextDouble())); 
-let initialStardate = int (rnd.NextDouble() * 20.0 + 20.0) * 100
+let initialStardate = (rnd.NextDouble() * 20.0 + 20.0) * 100.0
 let fnr = int (rnd.NextDouble() * 7.98 + 1.01)
 let square (x : double) = x * x
 
@@ -139,9 +139,9 @@ type DistanceCoordinates = {
 type State = {
     Galaxy : Galaxy
     Enterprise : Enterprise
-    StarDate : int              // T
+    StarDate : double              // T
     NumberOfStarDays : int      // T9
-    StartedOnStardate : int     // T0
+    StartedOnStardate : double     // T0
     CurrentQuadrant : QuadrantId
     CurrentSector : SectorId
     TotalKlingons : int
@@ -155,6 +155,13 @@ type Menu = {
     Command : string
     Text : string
     Function: State -> State
+    Exit : bool
+    }
+
+type Menu2 = {
+    Key : string
+    Text : string
+    Function: State -> string list
     Exit : bool
     }
 

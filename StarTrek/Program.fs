@@ -48,6 +48,7 @@ open Domain
 open QuadrantNames
 open Input
 open Computer
+open Computer2
 
 let start() =
     [0..2] |> List.iter(fun x -> printfn "")
@@ -61,18 +62,18 @@ let start() =
     printfn ""
 
 let endOfGame state =
-    printfn $"IT IS STARDATE {state.StarDate + state.NumberOfStarDays}."
+    printfn $"IT IS STARDATE {state.StarDate + double state.NumberOfStarDays}."
 
     match state.EndOfGameReason with
     | Some Destroyed -> 
         printfn "THE ENTERPRISE HAS BEEN DESTROYED. THEN FEDERATION "
         printfn "WILL BE CONQUERED"
-        printfn $"IT IS STARDATE {state.StarDate + state.NumberOfStarDays}"
+        printfn $"IT IS STARDATE {state.StarDate + double state.NumberOfStarDays}"
     | Some Won ->
         printfn "CONGRATULATIONS, CAPTAIN! THE LAST KLINGON BATTLE CRUISER"
         printfn "MENACING THE FEDERATION HAS BEEN DESTROYED."
         printfn ""
-        printfn $"YOUR EFFICIENCY RATING IS {state.NumberOfStarDays - state.StarDate}."
+        printfn $"YOUR EFFICIENCY RATING IS {double state.NumberOfStarDays - state.StarDate}."
     | Some Quit ->
         printfn $"THERE WERE {state.TotalKlingons} KLINGON BATTLE CRUISERS LEFT AT"
         printfn "THE END OF YOUR MISSION."
@@ -102,15 +103,15 @@ let checkForFatalErrors state =
 let shortRangeScan state = 
     let printSector (sectors : Sector array2d) line =
 
-        let printIt s  =
-            match s with
-            | Klingon k -> printf $" <K>"
-            | Enterprise e -> printf $" <E>"
-            | Star s -> printf $"  * "
-            | Starbase s -> printf $" >!<"
-            | EmptySpace e -> printf $"    "
+        let printIt sector  =
+            match sector with
+            | Klingon k -> " <K>"
+            | Enterprise e -> " <E>"
+            | Star s -> "  * "
+            | Starbase s -> " >!<"
+            | EmptySpace e -> "    "
 
-        sectorRange |> List.iter(fun i -> printIt sectors[line, i])
+        sectorRange |> List.map(fun i -> printIt sectors[line, i]) |> String.concat ""
 
     let printCondition enterprise =
         let cc = Console.ForegroundColor
@@ -128,28 +129,28 @@ let shortRangeScan state =
     printfn "   "
     printfn " +--1---2---3---4---5---6---7---8-+"
     printf "1|"
-    printSector sectors 0; printf "|1";
-    printfn $"        STARDATE            {state.StarDate}"
+    printf $"{printSector sectors 0}"; printf "|1";
+    printfn $"        STARDATE            {state.StarDate:N1}"
     printf "2|"
-    printSector sectors 1; printf "|2";
+    printf $"{printSector sectors 1}"; printf "|2";
     printf $"        CONDITION           "; printCondition state.Enterprise; printfn ""
     printf "3|"
-    printSector sectors 2; printf "|3";
+    printf $"{printSector sectors 2}"; printf "|3";
     printfn $"        QUADRANT            {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
     printf "4|"
-    printSector sectors 3; printf "|4";
+    printf $"{printSector sectors 3}"; printf "|4";
     printfn $"        SECTOR              {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
     printf "5|"
-    printSector sectors 4; printf "|5";
+    printf $"{printSector sectors 4}"; printf "|5";
     printfn $"        PHOTO TORPEDOES     {state.Enterprise.Torpedoes}"
     printf "6|"
-    printSector sectors 5; printf "|6";
+    printf $"{printSector sectors 5}"; printf "|6";
     printfn $"        TOTAL ENERGY        {state.Enterprise.Energy + state.Enterprise.ShieldEnergy}"
     printf "7|"
-    printSector sectors 6; printf "|7";
+    printf $"{printSector sectors 6}"; printf "|7";
     printfn $"        SHIELDS             {state.Enterprise.ShieldEnergy}"
     printf "8|"
-    printSector sectors 7; printf "|8";
+    printf $"{printSector sectors 7}"; printf "|8";
     printfn $"        KLINGONS REMAINING  {state.TotalKlingons}"
     printf " +--------------------------------+"
     printfn "   "
@@ -225,7 +226,7 @@ let startGame state =
     printfn "YOUR ORDERS ARE AS FOLLOWS:"
     printfn $"   DESTROY THE {state.TotalKlingons} KLINGON WARSHIPS WHICH HAVE INVADED" 
     printfn "   THE GALAXY BEFORE THEY CAN ATTACK FEDERATION HEADQUARTERS"
-    printfn $"   ON STARDATE {state.StarDate + state.NumberOfStarDays}. THIS GIVES YOU {(state.NumberOfStarDays)} DAYS. THERE ARE {state.TotalStarbases}"   
+    printfn $"   ON STARDATE {state.StarDate + double state.NumberOfStarDays}. THIS GIVES YOU {(state.NumberOfStarDays)} DAYS. THERE ARE {state.TotalStarbases}"   
     printfn "   STARBASES IN THE GALAXY FOR RESUPPLYING YOUR SHIP."
     printfn "   YOUR MISSION BEGINS WITH YOUR STARSHIP LOCATED"
     printfn $"   IN THE GALACTIC QUADRANT {(quadrantName newState.CurrentQuadrant)}"
@@ -302,7 +303,7 @@ let navigateQuadrant state x y warpFactor  =
         printfn "  IS HEREBY *DENIED*.  SHUT DOWN YOUR ENGINES.'"
         printfn "CHIEF ENGINEER SCOTT REPORTS  'WARP ENGINES SHUT DOWN"
         printfn $"AT SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1} OF QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
-        useShieldEnergy { state with StarDate = state.StarDate + 1 } warpFactor
+        useShieldEnergy { state with StarDate = state.StarDate + 1.0 } warpFactor
     else
         let newQuadrant = (fst state.CurrentQuadrant + x, snd state.CurrentQuadrant + y)
         
@@ -374,10 +375,8 @@ let klingonsShooting state =
             quadrant.Sectors |> Array2D.iteri(fun i j sector ->
                     match sector with
                     | Klingon k -> 
-                        let distance = sqrt (
-                                square (double (fst k.SectorId - fst state.CurrentSector)) +
-                                square (double (snd k.SectorId - snd state.CurrentSector))
-                                )
+                        let distance = Computer.getDistance (double (fst k.SectorId - fst state.CurrentSector))  
+                                        (double (snd k.SectorId - snd state.CurrentSector))
                         let h = double k.ShieldStrength / distance * (rnd.NextDouble() + 2.0)
 
                         shieldUnits <- shieldUnits - int h
@@ -515,7 +514,7 @@ let navigate state =
                 if v > -0.1 && v < 0 then 
                     enterprise <- setDevice enterprise i -0.1
                 if getDevice enterprise i > 0 then
-                    printfn $"DAMAGE CONTROL REPORTS {getDeviceName i} REPAIRED"
+                    printfn $"DAMAGE CONTROL REPORT {getDeviceName i} REPAIR COMPLETED"
         
         if rnd.NextDouble() <= 0.2 then
             let device = fnr
@@ -543,11 +542,11 @@ let navigate state =
             let (warpSpeed, warpFactor) = warp
             let mutable s1 = klingonsFire state (int warpSpeed)
 
-            let mutable t8 = 1
+            let mutable t8 = 1.0
             if warpFactor < 1 then
-                t8 <- int (10.0 * warpFactor) / 10
+                t8 <- double (int (10.0 * warpFactor)) / 10.0
             s1 <- { s1 with StarDate = s1.StarDate + t8 }
-            if s1.StarDate > s1.StartedOnStardate + s1.NumberOfStarDays then 
+            if s1.StarDate > s1.StartedOnStardate + double s1.NumberOfStarDays then 
                 s1 <- endOfGame { s1 with EndOfGameReason = Some Endings.TooLong }
             for i = 0 to (int warpSpeed) - 1 do
                 s1 <- navigateSector s1 course warpFactor
@@ -583,11 +582,7 @@ let private getKlingonsDestroyed state quadrant energy =
     quadrant.Sectors |> Array2D.iteri(fun i j sector ->
         match sector with
         | Klingon k -> 
-            let distance = sqrt (
-                    square (double (fst k.SectorId - fst state.CurrentSector)) +
-                    square (double (snd k.SectorId - snd state.CurrentSector))
-                    )
-
+            let distance = Computer.getDistance (double (fst k.SectorId - fst state.CurrentSector)) (double (snd k.SectorId - snd state.CurrentSector))
             let h = (energy / distance) * (rnd.NextDouble() + 2.0)
                     
             if h <= 0.15 * double k.ShieldStrength then
@@ -806,7 +801,7 @@ let mainLoop() =
             { Command = "TOR"; Text = "TO FIRE PHOTON TORPEDOES"; Function = photonTorpedoes; Exit = false }
             { Command = "SHE"; Text = "FOR SHIELD CONTROL"; Function = shieldControl; Exit = false }
             { Command = "DAM"; Text = "TO GET DAMAGE REPORTS"; Function = damageControl; Exit = false }
-            { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = computer; Exit = false }
+            { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = Computer2.computer; Exit = false }
             { Command = "XXX"; Text = "TO RESIGN YOUR COMMAND"; Function = endOfGame; Exit = true }
         ]
 
@@ -824,7 +819,6 @@ let mainLoop() =
 
         checkForFatalErrors state
 
-    ()
 
 [<EntryPoint>]
 let main argv =

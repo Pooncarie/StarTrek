@@ -19,7 +19,7 @@ val initialTorpedoes: int
 
 val initialKlingonShieldStrength: int
 
-val initialStardate: int
+val initialStardate: double
 
 val fnr: int
 
@@ -125,9 +125,9 @@ type State =
     {
       Galaxy: Galaxy
       Enterprise: Enterprise
-      StarDate: int
+      StarDate: double
       NumberOfStarDays: int
-      StartedOnStardate: int
+      StartedOnStardate: double
       CurrentQuadrant: QuadrantId
       CurrentSector: SectorId
       TotalKlingons: int
@@ -143,6 +143,13 @@ type Menu =
       Text : string
       Function: State -> State
       Exit: bool
+    }
+
+type Menu2 = {
+    Key : string
+    Text : string
+    Function: State -> string list
+    Exit : bool
     }
 
 val createQuadrant: x: int -> y: int -> Quadrant

@@ -60,6 +60,24 @@ let inputValidMenuOption (prompt : string) commands =
 
     commands |> List.find(fun x -> x.Command = str)
 
+let inputValidMenuOption2 (prompt : string) commands =
+    let mutable str = ""
+    let mutable isOk = false
+
+    while not isOk do
+        printf $"{prompt}"
+        str <- readLine()
+        if commands |> List.exists(fun x -> x.Key = str) then
+            isOk <- true
+        else
+            printfn "   "
+            printfn "ENTER ONE OF THE FOLLOWING:"
+            commands |> List.iter(fun mnu -> printfn $"{mnu.Key} - {mnu.Text}")
+            printfn "   "
+            isOk <- false
+
+    commands |> List.find(fun x -> x.Key = str)
+
 let inputCoordinate (prompt : string) =
     printf $"{prompt}"
     let str = readLine()
@@ -68,17 +86,17 @@ let inputCoordinate (prompt : string) =
     let bits = str.Split(',')
 
     if bits.Length <> 2 then
-        (0.0, 0.0)
+        None
     else
         let x = bits.[0].Trim()
         let y = bits.[1].Trim()
         if Double.TryParse(x, &numX) then
             if Double.TryParse(y, &numY) then
                 if sectorRange |> List.contains(int numX-1) && sectorRange |> List.contains(int  numY-1) then
-                    (numX, numY)
+                    Some (numX, numY)
                 else
-                    (0, 0)
+                    None
             else
-                (0, 0)
+                None
         else
-            (0, 0)
+            None
