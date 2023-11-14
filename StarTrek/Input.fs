@@ -35,6 +35,13 @@ let private getDoubleInRange (lineReader: unit -> string)  range : double option
     else
         None
 
+let private getStringInRange (lineReader: unit -> string)  range : string option =
+    let str = lineReader()
+    if range |> List.exists(fun x -> x = str) then
+        Some str
+    else
+        None
+
 let inputInteger (prompt : string) =
     let mutable isOk = false
     let mutable num = 0
@@ -77,10 +84,9 @@ let inputValidMenuOption (prompt : string) commands =
 
     while not isOk do
         printf $"{prompt}"
-        str <- readLine()
-        if commands |> List.exists(fun x -> x.Command = str) then
-            isOk <- true
-        else
+        match getStringInRange readLine (commands |> List.map(fun x -> x.Command)) with
+        | Some x -> str <- x; isOk <- true
+        | None ->
             printfn "   "
             printfn "ENTER ONE OF THE FOLLOWING:"
             commands |> List.iter(fun mnu -> printfn $"{mnu.Command} - {mnu.Text}")
@@ -95,10 +101,9 @@ let inputValidMenuOption2 (prompt : string) commands =
 
     while not isOk do
         printf $"{prompt}"
-        str <- readLine()
-        if commands |> List.exists(fun x -> x.Key = str) then
-            isOk <- true
-        else
+        match getStringInRange readLine (commands |> List.map(fun x -> x.Key)) with
+        | Some x -> str <- x; isOk <- true
+        | None ->
             printfn "   "
             printfn "ENTER ONE OF THE FOLLOWING:"
             commands |> List.iter(fun mnu -> printfn $"{mnu.Key} - {mnu.Text}")

@@ -3,7 +3,13 @@ open Domain
 open Computer
 open Input
 
-val start: unit -> unit
+val printList: list: string list -> unit
+
+val drawEnterprise: unit -> string list
+
+val getEndOfGameText: state: State -> string list
+
+val startGameText: state: State -> newState: State -> string list
 
 val endOfGame: state: State -> State
 
@@ -49,7 +55,7 @@ val photonTorpedoes: state: State -> State
 
 val shieldControl: state: State -> State
 
-val damageControl: state: State -> State
+val damageControl: state: State -> string list
 
 val mainLoop: unit -> unit
 

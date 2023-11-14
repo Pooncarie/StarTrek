@@ -49,48 +49,72 @@ open QuadrantNames
 open Input
 open Computer
 
-let start() =
-    [0..2] |> List.iter(fun x -> printfn "")
-    printfn "                                    ,------*------,"
-    printfn "                    ,-------------   '---  ------'"
-    printfn "                     '-------- --'      / /"
-    printfn "                         ,---' '-------/ /--,"
-    printfn "                          '----------------'"
-    printfn "                    THE USS ENTERPRISE --- NCC-1701"
-    printfn ""
-    printfn ""
+let printList (list : string list) =
+    list |> List.iter(fun line -> printfn "%s" line)
 
-let endOfGame state =
-    printfn $"IT IS STARDATE {state.StarDate + double state.NumberOfStarDays}."
+let drawEnterprise() =
+    [   
+        ""
+        ""
+        "                                    ,------*------,"
+        "                    ,-------------   '---  ------'"
+        "                     '-------- --'      / /"
+        "                         ,---' '-------/ /--,"
+        "                          '----------------'"
+        "                    THE USS ENTERPRISE --- NCC-1701"
+        ""
+        ""
+    ]
+
+let getEndOfGameText state =
+    let starDate = $"IT IS STARDATE {state.StarDate + double state.NumberOfStarDays}."
 
     match state.EndOfGameReason with
     | Some Destroyed -> 
-        printfn "THE ENTERPRISE HAS BEEN DESTROYED. THEN FEDERATION "
-        printfn "WILL BE CONQUERED"
-        printfn $"IT IS STARDATE {state.StarDate + double state.NumberOfStarDays}"
+        [
+            starDate
+            "THE ENTERPRISE HAS BEEN DESTROYED. THEN FEDERATION "
+            "WILL BE CONQUERED"
+            $"IT IS STARDATE {state.StarDate + double state.NumberOfStarDays}"
+        ]
     | Some Won ->
-        printfn "CONGRATULATIONS, CAPTAIN! THE LAST KLINGON BATTLE CRUISER"
-        printfn "MENACING THE FEDERATION HAS BEEN DESTROYED."
-        printfn ""
-        printfn $"YOUR EFFICIENCY RATING IS {double state.NumberOfStarDays - state.StarDate}."
+        [
+            starDate
+            "CONGRATULATIONS, CAPTAIN! THE LAST KLINGON BATTLE CRUISER"
+            "MENACING THE FEDERATION HAS BEEN DESTROYED."
+            ""
+            $"YOUR EFFICIENCY RATING IS {double state.NumberOfStarDays - state.StarDate}."
+        ]
     | Some Quit ->
-        printfn $"THERE WERE {state.TotalKlingons} KLINGON BATTLE CRUISERS LEFT AT"
-        printfn "THE END OF YOUR MISSION."
+        [
+            starDate
+            $"THERE WERE {state.TotalKlingons} KLINGON BATTLE CRUISERS LEFT AT"
+            "THE END OF YOUR MISSION."
+        ]
     | Some TooLong ->
-        printfn "YOU HAVE EXCEEDED YOUR ALLOWED DAYS"
-        printfn "THE FEDERATION WILL BE CONQUERED."
+        [
+            starDate
+            "YOU HAVE EXCEEDED YOUR ALLOWED DAYS"
+            "THE FEDERATION WILL BE CONQUERED."
+        ]
     | Some NoEnergy ->
-        printfn "YOU DO NOT HAVE THE ENERGY TO COMBAT THE KLINGONS."
-        printfn "THE FEDERATION WILL BE CONQUERED."
+        [
+            starDate
+            "YOU DO NOT HAVE THE ENERGY TO COMBAT THE KLINGONS."
+            "THE FEDERATION WILL BE CONQUERED."
+        ]
     | Some FatalError ->
-        printfn " ** FATAL ERROR **   YOU'VE JUST STRANDED YOUR SHIP IN SPACE"
-        printfn "YOU HAVE INSUFFICIENT MANEUVERING ENERGY, AND SHIELD CONTROL"
-        printfn "IS PRESENTLY INCAPABLE OF CROSS-CIRCUITING TO ENGINE ROOM!!"
-    | None -> ()
+        [
+            starDate
+            " ** FATAL ERROR **   YOU'VE JUST STRANDED YOUR SHIP IN SPACE"
+            "YOU HAVE INSUFFICIENT MANEUVERING ENERGY, AND SHIELD CONTROL"
+            "IS PRESENTLY INCAPABLE OF CROSS-CIRCUITING TO ENGINE ROOM!!"
+        ]
+    | None -> []
 
-
+let endOfGame state =
+    printList (getEndOfGameText state)
     Environment.Exit(0)
-
     state
 
 let checkForFatalErrors state =
@@ -218,17 +242,21 @@ let changeQuadrant state newQuadrant =
         Enterprise = match quadrant.Sectors[fst randomSectorIndexs[0], snd randomSectorIndexs[0]] with | Enterprise e -> e | _ -> state.Enterprise
         }
 
+let startGameText state newState =
+    [
+        "YOUR ORDERS ARE AS FOLLOWS:"
+        $"   DESTROY THE {state.TotalKlingons} KLINGON WARSHIPS WHICH HAVE INVADED" 
+        "   THE GALAXY BEFORE THEY CAN ATTACK FEDERATION HEADQUARTERS"
+        $"   ON STARDATE {state.StarDate + double state.NumberOfStarDays}. THIS GIVES YOU {(state.NumberOfStarDays)} DAYS. THERE ARE {state.TotalStarbases}"   
+        "   STARBASES IN THE GALAXY FOR RESUPPLYING YOUR SHIP."
+        "   YOUR MISSION BEGINS WITH YOUR STARSHIP LOCATED"
+        $"   IN THE GALACTIC QUADRANT {(quadrantName newState.CurrentQuadrant)}"
+    ]
+
 let startGame state =
     let newQuadrant = (rnd.Next(0, maxQuadrants - 1), rnd.Next(0, maxQuadrants - 1))
     let newState = changeQuadrant state newQuadrant
-
-    printfn "YOUR ORDERS ARE AS FOLLOWS:"
-    printfn $"   DESTROY THE {state.TotalKlingons} KLINGON WARSHIPS WHICH HAVE INVADED" 
-    printfn "   THE GALAXY BEFORE THEY CAN ATTACK FEDERATION HEADQUARTERS"
-    printfn $"   ON STARDATE {state.StarDate + double state.NumberOfStarDays}. THIS GIVES YOU {(state.NumberOfStarDays)} DAYS. THERE ARE {state.TotalStarbases}"   
-    printfn "   STARBASES IN THE GALAXY FOR RESUPPLYING YOUR SHIP."
-    printfn "   YOUR MISSION BEGINS WITH YOUR STARSHIP LOCATED"
-    printfn $"   IN THE GALACTIC QUADRANT {(quadrantName newState.CurrentQuadrant)}"
+    printList (startGameText state newState)
     newState
 
 let getCourse() : double option =
@@ -312,7 +340,7 @@ let getDecimalPart num = num - Math.Truncate((double num))
 
 (* In the basic version the devices are stored in an array D(), some of the calculations 
    iterate throught this array. Rather than have an array each device exists as a field
-   in the Enterprise type, this lot of funtions allowing mapping back and forth from
+   in the Enterprise type, this lot of functions allowing mapping back and forth from
    the array to the device names in the Enterprise type *)
 let getDevice enterprise i =
     match i with
@@ -681,8 +709,10 @@ let photonTorpedoes state =
     if canFire then
         let icourse = int (Math.Round course)
 
-        let x1 = (double state.DirectionArray[icourse,0] + double (state.DirectionArray[icourse + 1,0] - state.DirectionArray[icourse, 0]) * getDecimalPart course)
-        let x2 = (double state.DirectionArray[icourse,1] + double (state.DirectionArray[icourse + 1,1] - state.DirectionArray[icourse, 1]) * getDecimalPart course)
+        let x1 = double state.DirectionArray[icourse,0] + (double (state.DirectionArray[icourse + 1,0] - state.DirectionArray[icourse, 0]) 
+                * getDecimalPart course)
+        let x2 = double state.DirectionArray[icourse,1] + (double (state.DirectionArray[icourse + 1,1] - state.DirectionArray[icourse, 1]) 
+                * getDecimalPart course)
 
         let mutable x = double (fst state.CurrentSector)
         let mutable y = double (snd state.CurrentSector)
@@ -768,26 +798,33 @@ let shieldControl state =
             state
 
     printfn ""
-    doShieldControl state |> shortRangeScan
+    doShieldControl state
 
 
 (* 5690 *)
-let damageControl state =
-    printfn ""
+let damageControl state : string list =
     let enterprise = state.Enterprise
 
     if state.Enterprise.DamageControl >= 0 then
-        printfn "DEVICE STATE OF REPAIR:"
-        printfn $"   WARP ENGINES = {enterprise.WarpEngines:N2}"
-        printfn $"   SHORT RANGE SENSORS = {enterprise.ShortRangeSensors:N2}"
-        printfn $"   LONG RANGE SENSORS = {enterprise.LongRangeSensors:N2}"
-        printfn $"   PHASER CONTROL = {enterprise.PhaserControl:N2}"
-        printfn $"   PHOTON TUBES = {enterprise.PhotonTubes:N2}"
-        printfn $"   DAMAGE CONTROL = {enterprise.DamageControl:N2}"
-        printfn $"   SHIELD CONTROL = {enterprise.ShieldControl:N2}"
-        printfn $"   LIBRARY COMPUTER = {enterprise.LibraryComputer:N2}"
+        [
+            ""
+            "DEVICE STATE OF REPAIR:"
+            $"   WARP ENGINES = {enterprise.WarpEngines:N2}"
+            $"   SHORT RANGE SENSORS = {enterprise.ShortRangeSensors:N2}"
+            $"   LONG RANGE SENSORS = {enterprise.LongRangeSensors:N2}"
+            $"   PHASER CONTROL = {enterprise.PhaserControl:N2}"
+            $"   PHOTON TUBES = {enterprise.PhotonTubes:N2}"
+            $"   DAMAGE CONTROL = {enterprise.DamageControl:N2}"
+            $"   SHIELD CONTROL = {enterprise.ShieldControl:N2}"
+            $"   LIBRARY COMPUTER = {enterprise.LibraryComputer:N2}"
+        ]
     else
-        printfn "DAMAGE CONTROL REPORT NOT AVAILABLE"
+        ["DAMAGE CONTROL REPORT NOT AVAILABLE"]
+
+
+let doMenuCommand (state : State) (command: State -> string list) : State =
+    printList (command state)
+
     state
 
 let mainLoop() =
@@ -799,7 +836,7 @@ let mainLoop() =
             { Command = "PHA"; Text = "TO FIRE PHASERS"; Function = firePhasers; Exit = false }
             { Command = "TOR"; Text = "TO FIRE PHOTON TORPEDOES"; Function = photonTorpedoes; Exit = false }
             { Command = "SHE"; Text = "FOR SHIELD CONTROL"; Function = shieldControl; Exit = false }
-            { Command = "DAM"; Text = "TO GET DAMAGE REPORTS"; Function = damageControl; Exit = false }
+            { Command = "DAM"; Text = "TO GET DAMAGE REPORTS"; Function = (fun state -> state); Exit = false }
             { Command = "COM"; Text = "TO CALL ON LIBRARY-COMPUTER"; Function = Computer.computer; Exit = false }
             { Command = "XXX"; Text = "TO RESIGN YOUR COMMAND"; Function = endOfGame; Exit = true }
         ]
@@ -811,7 +848,9 @@ let mainLoop() =
         let cmd = inputValidMenuOption "COMMAND? " menu
         match cmd.Exit with
         | true -> state <- cmd.Function { state with EndOfGameReason = Some Endings.Quit }
-        | false -> state <- cmd.Function state
+        | false -> state <- match cmd.Command with
+                            | "DAM" -> doMenuCommand state damageControl
+                            | _ -> cmd.Function state
 
         if state.TotalKlingons = 0 then
             state <- endOfGame { state with EndOfGameReason = Some Endings.Won }
@@ -821,7 +860,7 @@ let mainLoop() =
 
 [<EntryPoint>]
 let main argv =
-    start()
+    printList (drawEnterprise())
 
     while true do
         mainLoop()
