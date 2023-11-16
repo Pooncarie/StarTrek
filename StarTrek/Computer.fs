@@ -1,8 +1,12 @@
 ﻿module Computer
 
 open Domain
+open Klingon
 open Input
+open Starbase
 open QuadrantNames
+open State
+open Menu
 
 (* copied from c# version at coding-horror/basic-computer-games *)
 let private getDirection (deltaX : double) (deltaY : double) =

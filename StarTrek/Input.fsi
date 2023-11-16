@@ -1,5 +1,6 @@
 ﻿module Input
-open Domain
+
+open Menu
 
 val private readLine: unit -> string
 val private getInteger: lineReader: (unit -> string)  -> int option

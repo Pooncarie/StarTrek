@@ -1,7 +1,8 @@
 ﻿module Program
 open Domain
-open Computer
-open Input
+open Enterprise
+open State
+open Quadrant
 
 val printList: list: string list -> unit
 

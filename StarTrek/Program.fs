@@ -45,9 +45,14 @@
 
 open System
 open Domain
+open Enterprise
+open Klingon
+open Sector
+open Quadrant
+open State
 open QuadrantNames
 open Input
-open Computer
+open Menu
 
 let printList (list : string list) =
     list |> List.iter(fun line -> printfn "%s" line)
@@ -247,7 +252,7 @@ let startGameText state newState =
         "YOUR ORDERS ARE AS FOLLOWS:"
         $"   DESTROY THE {state.TotalKlingons} KLINGON WARSHIPS WHICH HAVE INVADED" 
         "   THE GALAXY BEFORE THEY CAN ATTACK FEDERATION HEADQUARTERS"
-        $"   ON STARDATE {state.StarDate + double state.NumberOfStarDays}. THIS GIVES YOU {(state.NumberOfStarDays)} DAYS. THERE ARE {state.TotalStarbases}"   
+        $"   ON STARDATE {(state.StarDate + double state.NumberOfStarDays):N2}. THIS GIVES YOU {(state.NumberOfStarDays)} DAYS. THERE ARE {state.TotalStarbases}"   
         "   STARBASES IN THE GALAXY FOR RESUPPLYING YOUR SHIP."
         "   YOUR MISSION BEGINS WITH YOUR STARSHIP LOCATED"
         $"   IN THE GALACTIC QUADRANT {(quadrantName newState.CurrentQuadrant)}"
@@ -300,7 +305,8 @@ let getWarp state : (int * double) option =
             else
                 printfn $"ENGINEERING REPORTS 'INSUFFICIENT ENERGY AVAILABLE FOR MANEUVERING AT WARP {warpFactor}!'"
                
-                if state.Enterprise.ShieldEnergy < n - state.Enterprise.Energy || state.Enterprise.ShieldControl < 0 then
+                let e = state.Enterprise
+                if e.ShieldEnergy < n - e.Energy || e.ShieldControl < 0 then
                     checkForFatalErrors state
 
                 printfn $"DEFLECTOR CONTROL ROOM ACKNOWLEDGES {state.Enterprise.ShieldEnergy} UNITS OF ENERGY PRESENTLY DEPLOYED TO SHIELDS."
@@ -324,12 +330,16 @@ let useShieldEnergy state warpFactor  =
         state
 
 let navigateQuadrant state x y warpFactor  =
-    if fst state.CurrentQuadrant + x < 0 || fst state.CurrentQuadrant + x > maxQuadrants - 1 || snd state.CurrentQuadrant + y < 0 || snd state.CurrentQuadrant + y > maxQuadrants - 1 then
+    if fst state.CurrentQuadrant + x < 0 
+            || fst state.CurrentQuadrant + x > maxQuadrants - 1 
+            || snd state.CurrentQuadrant + y < 0 
+            || snd state.CurrentQuadrant + y > maxQuadrants - 1 then
         printfn "LT. UHURA REPORTS MESSAGE FROM STARFLEET COMMAND:"
         printfn "  'PERMISSION TO ATTEMPT CROSSING OF GALACTIC PERIMETER"
         printfn "  IS HEREBY *DENIED*.  SHUT DOWN YOUR ENGINES.'"
         printfn "CHIEF ENGINEER SCOTT REPORTS  'WARP ENGINES SHUT DOWN"
-        printfn $"AT SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1} OF QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
+        printfn $@"AT SECTOR {fst state.CurrentSector + 1},{snd state.CurrentSector + 1} 
+            OF QUADRANT {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
         useShieldEnergy { state with StarDate = state.StarDate + 1.0 } warpFactor
     else
         let newQuadrant = (fst state.CurrentQuadrant + x, snd state.CurrentQuadrant + y)

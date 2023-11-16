@@ -1,5 +1,6 @@
 ﻿module Computer
 open Domain
+open State
 
 val private getDirection: deltaX: double -> deltaY: double -> double
 

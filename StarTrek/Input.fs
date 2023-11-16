@@ -2,6 +2,7 @@
 
 open System
 open Domain
+open Menu
 
 let private readLine() : string = Console.ReadLine().Trim().ToUpper();
 
