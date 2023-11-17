@@ -26,12 +26,14 @@
     <Compile Include="Quadrant.fs" />
     <Compile Include="State.fsi" />
     <Compile Include="State.fs" />
-    <Compile Include="Menu.fsi" />
-    <Compile Include="Menu.fs" />
     <Compile Include="QuadrantNames.fsi" />
     <Compile Include="QuadrantNames.fs" />
     <Compile Include="Input.fsi" />
     <Compile Include="Input.fs" />
+    <Compile Include="Menu.fsi" />
+    <Compile Include="Menu.fs" />
+    <Compile Include="Menu2.fsi" />
+    <Compile Include="Menu2.fs" />
     <Compile Include="Computer.fsi" />
     <Compile Include="Computer.fs" />
     <Compile Include="Program.fsi" />

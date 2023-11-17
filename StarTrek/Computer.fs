@@ -6,7 +6,7 @@ open Input
 open Starbase
 open QuadrantNames
 open State
-open Menu
+open Menu2
 
 (* copied from c# version at coding-horror/basic-computer-games *)
 let private getDirection (deltaX : double) (deltaY : double) =

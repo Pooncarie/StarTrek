@@ -2,9 +2,8 @@
 
 open System
 open Domain
-open Menu
 
-let private readLine() : string = Console.ReadLine().Trim().ToUpper();
+let readLine() : string = Console.ReadLine().Trim().ToUpper();
 
 let private  getInteger (lineReader: unit -> string)  : int option =
     let str = lineReader()
@@ -36,7 +35,7 @@ let private getDoubleInRange (lineReader: unit -> string)  range : double option
     else
         None
 
-let private getStringInRange (lineReader: unit -> string)  range : string option =
+let getStringInRange (lineReader: unit -> string)  range : string option =
     let str = lineReader()
     if range |> List.exists(fun x -> x = str) then
         Some str
@@ -79,39 +78,7 @@ let inputString (prompt : string) =
     printf $"{prompt}"
     readLine()
 
-let inputValidMenuOption (prompt : string) commands =
-    let mutable str = ""
-    let mutable isOk = false
 
-    while not isOk do
-        printf $"{prompt}"
-        match getStringInRange readLine (commands |> List.map(fun x -> x.Command)) with
-        | Some x -> str <- x; isOk <- true
-        | None ->
-            printfn "   "
-            printfn "ENTER ONE OF THE FOLLOWING:"
-            commands |> List.iter(fun mnu -> printfn $"{mnu.Command} - {mnu.Text}")
-            printfn "   "
-            isOk <- false
-
-    commands |> List.find(fun x -> x.Command = str)
-
-let inputValidMenuOption2 (prompt : string) commands =
-    let mutable str = ""
-    let mutable isOk = false
-
-    while not isOk do
-        printf $"{prompt}"
-        match getStringInRange readLine (commands |> List.map(fun x -> x.Key)) with
-        | Some x -> str <- x; isOk <- true
-        | None ->
-            printfn "   "
-            printfn "ENTER ONE OF THE FOLLOWING:"
-            commands |> List.iter(fun mnu -> printfn $"{mnu.Key} - {mnu.Text}")
-            printfn "   "
-            isOk <- false
-
-    commands |> List.find(fun x -> x.Key = str)
 
 let inputCoordinate (prompt : string) =
     printf $"{prompt}"

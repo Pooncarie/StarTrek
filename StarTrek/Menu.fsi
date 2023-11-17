@@ -10,9 +10,7 @@ type Menu =
       Exit: bool
     }
 
-type Menu2 = {
-    Key : string
-    Text : string
-    Function: State -> string list
-    Exit : bool
-    }
+
+
+val inputValidMenuOption: prompt: string -> commands: Menu list -> Menu
+
