@@ -18,6 +18,7 @@ type Enterprise =
       ShieldControl: double
       LibraryComputer: double
       IsDocked: bool
+      Symbol: string
     }
 
 val createEnterprise: int * int -> Enterprise

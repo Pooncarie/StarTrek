@@ -39,7 +39,7 @@
      N -> warpFactor
      D() -> Device Array
      K() -> Klingon array, each element is a tuple of (x, y, strength) in current Quadrant
-     Q1 & Q2 -> Curent quadrant
+     Q1 & Q2 -> Current quadrant
      S1 & S2 -> Current sector
 *)
 
@@ -133,55 +133,42 @@ let shortRangeScan state =
 
         let printIt sector  =
             match sector with
-            | Klingon k -> " <K>"
-            | Enterprise e -> " <E>"
-            | Star s -> "  * "
-            | Starbase s -> " >!<"
-            | EmptySpace e -> "    "
+            | Klingon k -> " " + k.Symbol 
+            | Enterprise e -> " " + e.Symbol
+            | Star s -> " " + s.Symbol
+            | Starbase s -> " " + s.Symbol 
+            | EmptySpace e -> " " + e.Symbol
 
         sectorRange |> List.map(fun i -> printIt sectors[line, i]) |> String.concat ""
 
     let printCondition enterprise =
-        let cc = Console.ForegroundColor
         match enterprise.Condition with
-        | Green -> Console.ForegroundColor <- ConsoleColor.Green; printf "GREEN"
-        | Yellow -> Console.ForegroundColor <- ConsoleColor.Yellow; printf "YELLOW"
-        | Red -> Console.ForegroundColor <- ConsoleColor.Red; printf "*RED*"
-        | Docked -> Console.ForegroundColor <- ConsoleColor.Blue; printf "DOCKED"
-        Console.ForegroundColor <- cc
+        | Green -> "GREEN"
+        | Yellow -> "YELLOW"
+        | Red -> "*RED*"
+        | Docked -> "DOCKED"
 
-    let sectors = (currentQuadrant state).Sectors;
 
-    printfn ""
-    printfn $"SHORT RANGE SCAN FOR QUADRANT {(quadrantName state.CurrentQuadrant)}"
-    printfn "   "
-    printfn " +--1---2---3---4---5---6---7---8-+"
-    printf "1|"
-    printf $"{printSector sectors 0}"; printf "|1";
-    printfn $"        STARDATE            {state.StarDate:N1}"
-    printf "2|"
-    printf $"{printSector sectors 1}"; printf "|2";
-    printf $"        CONDITION           "; printCondition state.Enterprise; printfn ""
-    printf "3|"
-    printf $"{printSector sectors 2}"; printf "|3";
-    printfn $"        QUADRANT            {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
-    printf "4|"
-    printf $"{printSector sectors 3}"; printf "|4";
-    printfn $"        SECTOR              {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
-    printf "5|"
-    printf $"{printSector sectors 4}"; printf "|5";
-    printfn $"        PHOTO TORPEDOES     {state.Enterprise.Torpedoes}"
-    printf "6|"
-    printf $"{printSector sectors 5}"; printf "|6";
-    printfn $"        TOTAL ENERGY        {state.Enterprise.Energy + state.Enterprise.ShieldEnergy}"
-    printf "7|"
-    printf $"{printSector sectors 6}"; printf "|7";
-    printfn $"        SHIELDS             {state.Enterprise.ShieldEnergy}"
-    printf "8|"
-    printf $"{printSector sectors 7}"; printf "|8";
-    printfn $"        KLINGONS REMAINING  {state.TotalKlingons}"
-    printf " +--------------------------------+"
-    printfn "   "
+    let srs =
+        let sectors = (currentQuadrant state).Sectors
+
+        [ 
+            ""
+            $"SHORT RANGE SCAN FOR QUADRANT {(quadrantName state.CurrentQuadrant)}"
+            ""
+            " +--1---2---3---4---5---6---7---8-+"
+            $"1|{printSector sectors 0}|1        STARDATE            {state.StarDate:N1}"
+            $"2|{printSector sectors 1}|2        CONDITION           {printCondition state.Enterprise}"
+            $"3|{printSector sectors 2}|3        QUADRANT            {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
+            $"4|{printSector sectors 3}|4        SECTOR              {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
+            $"5|{printSector sectors 4}|5        PHOTO TORPEDOES     {state.Enterprise.Torpedoes}"
+            $"6|{printSector sectors 5}|6        TOTAL ENERGY        {state.Enterprise.Energy + state.Enterprise.ShieldEnergy}"
+            $"7|{printSector sectors 6}|7        SHIELDS             {state.Enterprise.ShieldEnergy}"
+            $"8|{printSector sectors 7}|8        KLINGONS REMAINING  {state.TotalKlingons}"
+            " +--------------------------------+"
+        ]
+
+    printList srs
     state
 
 let changeQuadrant state newQuadrant =

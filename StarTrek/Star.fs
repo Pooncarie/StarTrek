@@ -2,12 +2,19 @@
 
 open Domain
 
+[<Literal>]
+let private symbol = " * "
+
 [<Struct>]
 type Star =
-    { SectorId: SectorId }
+    { 
+        SectorId: SectorId 
+        Symbol : string
+    }
 
 let createStar sectorId = { 
     Star.SectorId = sectorId; 
+    Symbol = symbol
     }
 
 

@@ -4,6 +4,9 @@ open Domain
 
 [<Struct>]
 type EmptySpace =
-    { SectorId: SectorId }
+    { 
+        SectorId: SectorId 
+        Symbol : string
+    }
 
 val createEmptySpace: int * int -> EmptySpace

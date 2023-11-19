@@ -2,6 +2,9 @@
 
 open Domain
 
+[<Literal>]
+let private symbol = "<E>"
+
 type Enterprise = {
     SectorId : SectorId
     Condition : Condition
@@ -17,6 +20,7 @@ type Enterprise = {
     ShieldControl : double                  // D(7)
     LibraryComputer : double                // D(8)
     IsDocked : bool
+    Symbol : string
 }
 
 let createEnterprise sectorId =  { 
@@ -34,6 +38,7 @@ let createEnterprise sectorId =  {
     LibraryComputer = 0
     DamageControl = 0
     IsDocked = false
+    Symbol = symbol
     }
 
 let copyEnterprise (enterprise : Enterprise)  = { 
@@ -51,4 +56,5 @@ let copyEnterprise (enterprise : Enterprise)  = {
     PhotonTubes = enterprise.PhotonTubes
     DamageControl = enterprise.DamageControl
     IsDocked = enterprise.IsDocked
+    Symbol = enterprise.Symbol
     }

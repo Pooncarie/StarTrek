@@ -3,6 +3,9 @@ open Domain
 
 [<Struct>]
 type Star =
-    { SectorId: SectorId }
+    { 
+        SectorId: SectorId 
+        Symbol : string
+    }
 
 val createStar: int * int -> Star
