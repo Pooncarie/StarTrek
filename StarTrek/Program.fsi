@@ -32,12 +32,6 @@ val navigateQuadrant: state: State -> x: int -> y: int -> warpFactor: double -> 
 
 val getDecimalPart: num: double -> double
 
-val getDevice: enterprise: Enterprise -> i: int -> double
-
-val setDevice: enterprise: Enterprise -> i: int -> value: double -> Enterprise
-
-val getDeviceName: i: int -> string
-
 val getCondition: state: State -> Condition
 
 val klingonsShooting: state: State -> State

@@ -40,3 +40,18 @@ let createQuadrant x y =
     quadrant
 
 
+let clearSectors quadrant = 
+    quadrant.Sectors |> Array2D.iteri(fun i j sector -> 
+        match sector with
+        | EmptySpace _ -> ()
+        | _ -> quadrant.Sectors[i, j] <- createEmptySpace (i,j)
+
+    )
+
+let clearKlingonSectors quadrant = 
+    quadrant.Sectors |> Array2D.iteri(fun i j sector -> 
+        match sector with
+        | Klingon k -> quadrant.Sectors[i, j] <- createEmptySpace (i,j)
+        | _ -> ()
+    )
+

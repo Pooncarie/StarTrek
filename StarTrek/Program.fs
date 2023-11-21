@@ -57,19 +57,6 @@ open Menu
 let printList (list : string list) =
     list |> List.iter(fun line -> printfn "%s" line)
 
-let drawEnterprise() =
-    [   
-        ""
-        ""
-        "                                    ,------*------,"
-        "                    ,-------------   '---  ------'"
-        "                     '-------- --'      / /"
-        "                         ,---' '-------/ /--,"
-        "                          '----------------'"
-        "                    THE USS ENTERPRISE --- NCC-1701"
-        ""
-        ""
-    ]
 
 let getEndOfGameText state =
     let starDate = $"IT IS STARDATE {state.StarDate + double state.NumberOfStarDays}."
@@ -140,14 +127,7 @@ let shortRangeScan state =
             | EmptySpace e -> " " + e.Symbol
 
         sectorRange |> List.map(fun i -> printIt sectors[line, i]) |> String.concat ""
-
-    let printCondition enterprise =
-        match enterprise.Condition with
-        | Green -> "GREEN"
-        | Yellow -> "YELLOW"
-        | Red -> "*RED*"
-        | Docked -> "DOCKED"
-
+ 
 
     let srs =
         let sectors = (currentQuadrant state).Sectors
@@ -172,15 +152,7 @@ let shortRangeScan state =
     state
 
 let changeQuadrant state newQuadrant =
-
-    let clearSectors quadrant = 
-        quadrant.Sectors |> Array2D.iteri(fun i j sector -> 
-            match sector with
-            | EmptySpace _ -> ()
-            | _ -> quadrant.Sectors[i, j] <- createEmptySpace (i,j)
-
-        )
-
+   
     let randomSectorIndexs = 
         Seq.initInfinite (fun _ -> (rnd.Next(0, maxSectors - 1), rnd.Next(0, maxSectors - 1))) 
         |> Seq.distinct 
@@ -335,46 +307,6 @@ let navigateQuadrant state x y warpFactor  =
 
 let getDecimalPart num = num - Math.Truncate((double num))
 
-(* In the basic version the devices are stored in an array D(), some of the calculations 
-   iterate throught this array. Rather than have an array each device exists as a field
-   in the Enterprise type, this lot of functions allowing mapping back and forth from
-   the array to the device names in the Enterprise type *)
-let getDevice enterprise i =
-    match i with
-    | 1 -> enterprise.WarpEngines
-    | 2 -> enterprise.ShortRangeSensors
-    | 3 -> enterprise.LongRangeSensors
-    | 4 -> enterprise.PhaserControl
-    | 5 -> enterprise.PhotonTubes
-    | 6 -> enterprise.DamageControl
-    | 7 -> enterprise.ShieldControl
-    | 8 -> enterprise.LibraryComputer
-    | _ -> 0
-
-let setDevice enterprise i value =
-    match i with
-    | 1 -> { enterprise with WarpEngines = enterprise.WarpEngines + value }
-    | 2 -> { enterprise with ShortRangeSensors = enterprise.ShortRangeSensors + value }
-    | 3 -> { enterprise with LongRangeSensors = enterprise.LongRangeSensors + value }
-    | 4 -> { enterprise with ShieldControl = enterprise.ShieldControl + value }
-    | 5 -> { enterprise with LibraryComputer = enterprise.LibraryComputer + value }
-    | 6 -> { enterprise with PhaserControl = enterprise.PhaserControl + value }
-    | 7 -> { enterprise with PhotonTubes = enterprise.PhotonTubes + value }
-    | 8 -> { enterprise with DamageControl = enterprise.DamageControl + value }
-    | _ -> enterprise
-
-let getDeviceName i =
-    match i with
-    | 1 -> "WARP ENGINES"
-    | 2 -> "SHORT RANGE SENSORS"
-    | 3 -> "LONG RANGE SENSORS"
-    | 4 -> "PHASER CONTROL"
-    | 5 -> "PHOTON TUBES"
-    | 6 -> "DAMAGE CONTROL"
-    | 7 -> "SHIELD CONTROL"
-    | 8 -> "LIBRARY COMPUTER"
-    | _ -> $"**** UNKOWN DEVICE{i} *****"
-
 let getCondition state =
     let quadrant = currentQuadrant state
     if state.Enterprise.Condition = Condition.Docked then
@@ -500,13 +432,6 @@ let navigateSector state course warpFactor  =
 let navigate state =
     let course = getCourse()
     
-    let clearKlingonSectors quadrant = 
-        quadrant.Sectors |> Array2D.iteri(fun i j sector -> 
-            match sector with
-            | Klingon k -> quadrant.Sectors[i, j] <- createEmptySpace (i,j)
-            | _ -> ()
-        )
-
     (* 2590 *)
     let klingonsMove quadrant =
         clearKlingonSectors quadrant
@@ -803,25 +728,13 @@ let damageControl state : string list =
     let enterprise = state.Enterprise
 
     if state.Enterprise.DamageControl >= 0 then
-        [
-            ""
-            "DEVICE STATE OF REPAIR:"
-            $"   WARP ENGINES = {enterprise.WarpEngines:N2}"
-            $"   SHORT RANGE SENSORS = {enterprise.ShortRangeSensors:N2}"
-            $"   LONG RANGE SENSORS = {enterprise.LongRangeSensors:N2}"
-            $"   PHASER CONTROL = {enterprise.PhaserControl:N2}"
-            $"   PHOTON TUBES = {enterprise.PhotonTubes:N2}"
-            $"   DAMAGE CONTROL = {enterprise.DamageControl:N2}"
-            $"   SHIELD CONTROL = {enterprise.ShieldControl:N2}"
-            $"   LIBRARY COMPUTER = {enterprise.LibraryComputer:N2}"
-        ]
+        getDamage enterprise
     else
         ["DAMAGE CONTROL REPORT NOT AVAILABLE"]
 
 
 let doMenuCommand (state : State) (command: State -> string list) : State =
     printList (command state)
-
     state
 
 let mainLoop() =
