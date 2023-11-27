@@ -15,3 +15,4 @@ type Quadrant =
 val createQuadrant: x: int -> y: int -> Quadrant
 val clearSectors: quadrant: Quadrant -> unit
 val clearKlingonSectors: quadrant: Quadrant -> unit 
+val clearEnterpriseSectors: quadrant: Quadrant -> unit

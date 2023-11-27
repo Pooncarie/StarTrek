@@ -99,7 +99,7 @@ let getDeviceName deviceNo =
     | 8 -> "LIBRARY COMPUTER"
     | _ -> $"**** UNKOWN DEVICE {deviceNo} *****"
      
-let printCondition enterprise =
+let getConditionStr enterprise =
     match enterprise.Condition with
     | Green -> "GREEN"
     | Yellow -> "YELLOW"

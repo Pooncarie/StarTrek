@@ -6,8 +6,6 @@ open Quadrant
 
 val printList: list: string list -> unit
 
-val drawEnterprise: unit -> string list
-
 val getEndOfGameText: state: State -> string list
 
 val startGameText: state: State -> newState: State -> string list

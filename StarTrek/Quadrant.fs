@@ -55,3 +55,9 @@ let clearKlingonSectors quadrant =
         | _ -> ()
     )
 
+let clearEnterpriseSectors quadrant = 
+    quadrant.Sectors |> Array2D.iteri(fun i j sector -> 
+        match sector with
+        | Enterprise _ -> quadrant.Sectors[i, j] <- createEmptySpace (i,j)
+        | _ -> ()
+    )

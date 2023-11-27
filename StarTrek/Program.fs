@@ -138,7 +138,7 @@ let shortRangeScan state =
             ""
             " +--1---2---3---4---5---6---7---8-+"
             $"1|{printSector sectors 0}|1        STARDATE            {state.StarDate:N1}"
-            $"2|{printSector sectors 1}|2        CONDITION           {printCondition state.Enterprise}"
+            $"2|{printSector sectors 1}|2        CONDITION           {getConditionStr state.Enterprise}"
             $"3|{printSector sectors 2}|3        QUADRANT            {fst state.CurrentQuadrant + 1},{snd state.CurrentQuadrant + 1}"
             $"4|{printSector sectors 3}|4        SECTOR              {fst state.CurrentSector + 1},{snd state.CurrentSector + 1}"
             $"5|{printSector sectors 4}|5        PHOTO TORPEDOES     {state.Enterprise.Torpedoes}"
@@ -401,6 +401,7 @@ let navigateSector state course warpFactor  =
                 | false -> { state with Enterprise = { state.Enterprise with IsDocked = false; Condition = Condition.Green } }
             | false -> state
 
+        
         quadrant.Sectors |> Array2D.iteri(fun i j sector ->
             match sector with
             | Enterprise _ -> 
@@ -594,17 +595,19 @@ let firePhasers state =
 (* 4700 *)
 let photonTorpedoes state =
     let getCourse() : double option =
-        let courseError() =
-            printfn ""
-            printfn "ENSIGN CHEKOV REPORTS, 'INCORRECT COURSE DATA, SIR!'"
-            printfn ""
+        let courseError =
+            [
+                ""
+                "ENSIGN CHEKOV REPORTS, 'INCORRECT COURSE DATA, SIR!'"
+                ""
+            ]
 
         let mutable course = (inputDouble "PHOTON TORPEDO COURSE (1-8) ")
         if course >= 8.5 then
             course <- 1.0
     
         if course < 1 || course > 8.999 then
-            courseError()
+            printList courseError
             None
         else
             Some (course - 1.0)
