@@ -18,7 +18,7 @@ let createKlingon sectorId =  {
     Symbol = symbol
     }
 
-let copyKlingon (klingon : Klingon) = { 
+let copyKlingon klingon = { 
     SectorId = klingon.SectorId; 
     ShieldStrength =  klingon.ShieldStrength 
     Symbol = klingon.Symbol
