@@ -7,7 +7,12 @@ Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "StarTrek", "StarTrek\StarTr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Scratch", "Scratch\Scratch.csproj", "{4459830C-934D-4847-950E-D5FB8BC9FA35}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Play", "Play\Play.fsproj", "{0E214760-6588-427D-AB86-1E59C91ACA71}"
+Project("{6EC3EE1D-3C4E-46DD-8F32-0CC8E7565705}") = "Play", "Play\Play.fsproj", "{0E214760-6588-427D-AB86-1E59C91ACA71}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{CE887260-9169-4D98-8718-4467AFDEF316}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
