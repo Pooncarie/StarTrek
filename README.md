@@ -13,4 +13,4 @@ I am learning functional programming and F#. I thought this would be a fun proje
 
 I am sure there are many ways to improve the code and I would welcome any suggestions.
 
-There no doubt bugs in the code and from time to time I will fix them as I find them.
+There no doubt bugs in the code and from time to time I will fix them as I find them.  
